@@ -1,4 +1,7 @@
 library(tidyverse)
+library(lme4)
+library(lmerTest)
+library(performance)
 
 q1_data_raw <- read_csv("assignment1_data1.csv")
 
@@ -12,11 +15,11 @@ q1_data <- q1_data_raw %>%
 
 head(q1_data)
 
-(q1_data_plot <- q1_data %>% 
+(q1_plot <- q1_data %>% 
     ggplot(aes(x = condition, y = RT, colour = condition)) +
     geom_violin(width = 0.5) +
-    geom_point(alpha = 0.5, position = position_jitter(width = 0.1, seed = 42)) +
-    guides(colour = FALSE) +
+    geom_point(alpha = 0.2, position = position_jitter(width = 0.1, seed = 42)) +
+    guides(colour = 'none') +
     theme_minimal() +
     stat_summary(fun.data = 'mean_cl_boot', colour = 'black') +
     labs(x = "Condition",
@@ -24,3 +27,4 @@ head(q1_data)
          title = "Effect of Item Context on Reaction Time") +
     coord_flip()
 )
+
