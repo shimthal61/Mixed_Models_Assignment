@@ -1,0 +1,10 @@
+---
+title: "Assignment_1_markdown"
+author: '10179889'
+date: "09/02/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
