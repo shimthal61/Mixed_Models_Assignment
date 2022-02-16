@@ -35,6 +35,7 @@ library(performance)
 library(visdat)
 library(ggthemes)
 library(showtext)
+library(buildmer)
 ```
 
 The `{tidyverse}` package contains a collection of open source R packages that gives us access to a variety of useful functions and commands for data wrangling and visualisation. The `{showtext}` package enables us to load in and use over 1291 fonts from [Google Fonts](https://fonts.google.com/) for our data visualisations, whilst `{ggthemes}` contains extra themes for our plots. The `{afex}`and`{emmeans}` packages will allow us to build ANOVA models and perform post-hoc analyses, respectively. We'll be using the `{afex]` package instead of the `aov()` function in base R as it allows us to build ANOVA models that will work for our experimental designs, as well as using type III sums of squares by default. Finally, `{visdat}` will help us to spot any missing data in our datasets.
@@ -117,5 +118,19 @@ q1_data_tidied %>%
       axis.title.x = element_text(size = 30, margin = margin(t = 30)),
       axis.title.y = element_text(size = 30, margin = margin(r = 30))) +
     coord_flip()
+```
+
+```{r}
+model <- buildmer(Response_Time ~ Context + 
+                    (1 + Context | Item) +
+                    (1 + Context | Subject),
+                  q1_data_tidied)
+```
+
+```{r}
+model_1 <- lmer(Response_Time ~ Context + 
+                    (1 + Context | Item) +
+                    (1 + Context | Subject),
+                  q1_data_tidied)
 ```
 
