@@ -18,10 +18,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
 For this assignment, we have been provided with two different datasets. Using the knowledge we have gained from the workshops combined with further reading and wider resources, I will:
 
-- Wrangle and tidy the data
-- Summarise the data
-- Visualise the data
-- Build and interpret the appropriate models
+-   Wrangle and tidy the data
+-   Summarise the data
+-   Visualise the data
+-   Build and interpret the appropriate models
 
 ## Packages
 
@@ -39,11 +39,10 @@ library(showtext)
 
 The `{tidyverse}` package contains a collection of open source R packages that gives us access to a variety of useful functions and commands for data wrangling and visualisation. The `{showtext}` package enables us to load in and use over 1291 fonts from [Google Fonts](https://fonts.google.com/) for our data visualisations, whilst `{ggthemes}` contains extra themes for our plots. The `{afex}`and`{emmeans}` packages will allow us to build ANOVA models and perform post-hoc analyses, respectively. We'll be using the `{afex]` package instead of the `aov()` function in base R as it allows us to build ANOVA models that will work for our experimental designs, as well as using type III sums of squares by default. Finally, `{visdat}` will help us to spot any missing data in our datasets.
 
-To be able to dictate the font family later, we first need to downlaod a font from 
-After downloading the **Lato** font from [Google Fonts](https://fonts.google.com/), [Google Fonts](https://fonts.google.com). I decided to pick the 'Lato' Font, as its larger character height lends itself to easier readability at small sizes. Let's read this font into R using the `font_add_()` command and tell `{showtext}` to automatically render the text:
+To be able to dictate the font family later, we first need to download a font from [Google Fonts](https://fonts.google.com/). I decided to pick the *Lato* Font, as its larger character height lends itself to easier readability at small sizes. Within the `font_add()` command, we can read in our font by specifying what name to assign to our font as well as the path to the font file. Finally, we tell `{showtext}` to automatically render the text:
 
 ```{r}
-font_add("lato", regular = "lato-regular.ttf")
+font_add("lato", regular = "Lato-regular.ttf", bold = "Lato-Bold.ttf")
 showtext_auto()
 ```
 
@@ -51,15 +50,72 @@ showtext_auto()
 
 Let's read in our data and look over the information for question 1:
 
-> <font size = "3"> In a repeated measures experiment participants had to respond to a word that appeared in one of three
-contexts. These were “Neutral”, “Negative”, and “Positive”. There were 24 participants and 24 items. Each
-item appeared in each of the three contexts. By building the appropriate mixed model, determine whether
-context influenced response time on the dependent variable (labelled “DV” and measured in milliseconds). </font>
+> <font size = "3"> We have 24 participants in a repeated measures design where we are interested in the effect of context on response time. Our experimental factor (Context) has 3 levels (Neutral vs. Negative vs. Positive). The time it took for participants to respond, which was taken as a measure of reaction time in milliseconds, served as the dependent variable. There were 24 items, and each item appeared in each of the three contexts. </font>
 
-Let's read in our data using the `read_csv()` function. We've organised our files using a .Rproj type to ensure reproducibility. We can also glimpse the first 6 rows of our data using the `head()` function:  
+Let's read in our data using the `read_csv()` function. We've organised our files using a .Rproj type to ensure reproducibility. We can also glimpse the first 6 rows of our data using the `head()` function:
 
 ```{r, message = FALSE}
 q1_data_raw <- read_csv("assignment1_data1.csv")
 head(q1_data_raw)
+```
+
+## Data Wrangling
+
+Using the `str()` function, we can display the structure of our data.
+
+```{r, message = FALSE}
+str(q1_data_raw)
+```
+
+As it currently stands, our `subj`, `item`, and `condition` columns are not coded as factors. We can use the `transmute()` function to replace these variables with their factorised equivalents. Within this argument, we can also change the column names to make them more meaningful. We'll pass this on to a new variable, which we'll call `q1_data_tidied`:
+
+```{r}
+q1_data_tidied <- q1_data_raw %>% 
+  transmute(Subject = factor(subj),
+         Item = factor(item),
+         Context = factor(condition),
+         Response_Time = DV)
+head(q1_data_tidied)
+```
+
+This is better - Our columns are coded correctly and are labelled meaningfully. Moreover, every row corresponds to one observation, which is key for building our models later.
+
+## Data Summarising
+
+Let's create a tibble for the summary statistics of our dataset. We'll first utilise the `group_by()` function to gather our visual-quality variable, then `summarise()` to create a new table consisting of Response Time mean and standard deviation. The data can be arranged from the fastest mean Response Time to the slowest using the `arrange()` function:
+
+```{r}
+q1_data_tidied %>% 
+  group_by(Context) %>% 
+  summarise(mean_RT = mean(Response_Time), sd_RT = sd(Response_Time)) %>%
+  arrange(mean_RT)
+```
+
+At a glance, it looks as though participants who were presented a items in a negative context had faster response times than those who were presented with items in neutral or postive contexts. Since the output returned no NA results, we know that there is no missing data and therefore no reason to use the `vis_dat()` function to locate the missing data. At this stage, we can create some data visualisations to better present our results.
+
+## Data Visualisations
+
+In this visualisation, we're jittering the data points, meaning that every time we execute the code, the points will jitter to a different position. This implies that our code is not reproducible, because we don't know the seed that R will use to generate the sequence. By setting the seed using the `set.seed()` function, we can ensure that the output will be the same every time it is run. I set the seed to 42 for its reference to Hitch Hikers Guide to the Galaxy...
+
+Next, we can build a visualisation by plotting the raw data points using the `geom_point` function, and the shape of the distribution for each condition using the `geom_violin()` function. We have also added some summary data in the form of the Mean and Confidence Intervals using the `stat_summary()` function. We can dictate the y-axis breaks within the `scale_y_continuous()` function, and change the text font, size, and margin within the `theme()` argument. Finally, we flip the Cartesian coordinates so that the horizontal becomes the vertical and vice versa.
+
+```{r}
+q1_data_tidied %>% 
+    ggplot(aes(x = Context, y = Response_Time, colour = Context)) +
+    geom_violin(width = 0.5) +
+    geom_point(alpha = 0.3, position = position_jitter(width = 0.08, seed = 42)) +
+    guides(colour = 'none') +
+    stat_summary(fun.data = 'mean_cl_boot', colour = 'black') +
+    labs(y = "Reaction Time (ms)",
+         title = "Effect of Item Context on Reaction Time") +
+    scale_y_continuous(breaks = seq(0, 6000, by = 1000),
+                       limits = c(0, 6000)) +
+    theme_minimal() +
+    theme(
+      text = element_text(family = "lato", size = 25),
+      plot.title = element_text(size = 40, hjust = 0.5, margin = margin(b = 30), face = "bold"),
+      axis.title.x = element_text(size = 30, margin = margin(t = 30)),
+      axis.title.y = element_text(size = 30, margin = margin(r = 30))) +
+    coord_flip()
 ```
 

@@ -11,24 +11,26 @@ showtext_auto()
 q1_data_raw <- read_csv("assignment1_data1.csv")
 
 head(q1_data_raw)
+str(q1_data_raw)
 
-q1_data <- q1_data_raw %>% 
-  mutate(subj = factor(subj),
-         item = factor(item),
-         condition = factor(condition)) %>% 
-  rename(RT = DV,
-         Subject = subj,
-         Item = item)
+q1_data_tidied <- q1_data_raw %>% 
+  transmute(Subject = factor(subj),
+            Item = factor(item),
+            Condition = factor(condition),
+            Response_Time = DV)
+head(q1_data_tidied)
 
-head(q1_data)
+str(q1_data_tidied)
+
+head(q1_data_tidied)
 
 (q1_descriptives <- q1_data %>% 
-  group_by(condition) %>% 
+  group_by(Condition) %>% 
   summarise(mean = mean(RT), sd = sd(RT))
 )
 
 (q1_plot <- q1_data %>% 
-    ggplot(aes(x = condition, y = RT, colour = condition)) +
+    ggplot(aes(x = Condition, y = RT, colour = Condition)) +
     geom_violin(width = 0.5) +
     geom_point(alpha = 0.2, position = position_jitter(width = 0.08, seed = 42)) +
     guides(colour = 'none') +
@@ -47,14 +49,14 @@ head(q1_data)
     coord_flip())
 
 q1_descriptives %>% 
-  ggplot(aes(x = condition, y = mean)) +
+  ggplot(aes(x = Condition, y = mean)) +
   geom_point()
 
 # If we attempt to build a model which takes into account the random effect of condition, item, and subject, we get a
 # warning suggesting we have too many parameters than our data supports
-q1_model <- lmer(RT ~ condition + (1 + condition | Subject) + (1 + condition | Item), data = q1_data)
+q1_model <- lmer(RT ~ Condition + (1 + Condition | Subject) + (1 + Condition | Item), data = q1_data)
 
-q1_model <- lmer(RT ~ condition + (1 | Subject) + (1 | Item), data = q1_data)
+q1_model <- lmer(RT ~ Condition + (1 | Subject) + (1 | Item), data = q1_data)
 
 check_model(q1_model)
 
