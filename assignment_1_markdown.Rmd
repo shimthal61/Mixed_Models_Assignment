@@ -27,7 +27,7 @@ For this assignment, we have been provided with two different datasets. Using th
 
 First, let's load in our packages using the `library()` function:
 
-```{r}
+```{r, message = FALSE, warning = FALSE}
 library(tidyverse)
 library(lme4)
 library(lmerTest)
@@ -37,9 +37,29 @@ library(ggthemes)
 library(showtext)
 ```
 
-The `{tidyverse}` package contains a collection of open source R packages that gives us access to a variety of useful functions and commands for data wrangling and visualisation. The `{showtext}` package enables us to load in and use over 1291 fonts from [Google Fonts](https://fonts.google.com/) for our data visualisations, whilst `{ggthemes}` contains extra themes for our plots. 
+The `{tidyverse}` package contains a collection of open source R packages that gives us access to a variety of useful functions and commands for data wrangling and visualisation. The `{showtext}` package enables us to load in and use over 1291 fonts from [Google Fonts](https://fonts.google.com/) for our data visualisations, whilst `{ggthemes}` contains extra themes for our plots. The `{afex}`and`{emmeans}` packages will allow us to build ANOVA models and perform post-hoc analyses, respectively. We'll be using the `{afex]` package instead of the `aov()` function in base R as it allows us to build ANOVA models that will work for our experimental designs, as well as using type III sums of squares by default. Finally, `{visdat}` will help us to spot any missing data in our datasets.
 
+To be able to dictate the font family later, we first need to downlaod a font from 
+After downloading the **Lato** font from [Google Fonts](https://fonts.google.com/), [Google Fonts](https://fonts.google.com). I decided to pick the 'Lato' Font, as its larger character height lends itself to easier readability at small sizes. Let's read this font into R using the `font_add_()` command and tell `{showtext}` to automatically render the text:
 
-The `{afex}`and`{emmeans}` packages will allow us to build ANOVA models and perform post-hoc analyses, respectively. We'll be using the `{afex]` package instead of the `aov()` function in base R as it allows us to build ANOVA models that will work for our experimental designs, as well as using type III sums of squares by default. Finally, `{visdat}` will help us to spot any missing data in our datasets.
+```{r}
+font_add("lato", regular = "lato-regular.ttf")
+showtext_auto()
+```
 
-After downloading the **Lato** font from [Google Fonts](https://fonts.google.com/), 
+# Question 1
+
+Let's read in our data and look over the information for question 1:
+
+> <font size = "3"> In a repeated measures experiment participants had to respond to a word that appeared in one of three
+contexts. These were “Neutral”, “Negative”, and “Positive”. There were 24 participants and 24 items. Each
+item appeared in each of the three contexts. By building the appropriate mixed model, determine whether
+context influenced response time on the dependent variable (labelled “DV” and measured in milliseconds). </font>
+
+Let's read in our data using the `read_csv()` function. We've organised our files using a .Rproj type to ensure reproducibility. We can also glimpse the first 6 rows of our data using the `head()` function:  
+
+```{r, message = FALSE}
+q1_data_raw <- read_csv("assignment1_data1.csv")
+head(q1_data_raw)
+```
+

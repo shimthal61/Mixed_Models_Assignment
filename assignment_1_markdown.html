@@ -257,6 +257,40 @@ div.tocify {
 <li>Visualise the data</li>
 <li>Build and interpret the appropriate models</li>
 </ul>
+<div id="packages" class="section level2">
+<h2>Packages</h2>
+<p>First, let’s load in our packages using the <code>library()</code> function:</p>
+<pre class="r"><code>library(tidyverse)
+library(lme4)
+library(lmerTest)
+library(performance)
+library(visdat)
+library(ggthemes)
+library(showtext)</code></pre>
+<p>The <code>{tidyverse}</code> package contains a collection of open source R packages that gives us access to a variety of useful functions and commands for data wrangling and visualisation. The <code>{showtext}</code> package enables us to load in and use over 1291 fonts from <a href="https://fonts.google.com/">Google Fonts</a> for our data visualisations, whilst <code>{ggthemes}</code> contains extra themes for our plots. The <code>{afex}</code>and<code>{emmeans}</code> packages will allow us to build ANOVA models and perform post-hoc analyses, respectively. We’ll be using the <code>{afex]</code> package instead of the <code>aov()</code> function in base R as it allows us to build ANOVA models that will work for our experimental designs, as well as using type III sums of squares by default. Finally, <code>{visdat}</code> will help us to spot any missing data in our datasets.</p>
+<p>To be able to dictate the font family later, we first need to downlaod a font from After downloading the <strong>Lato</strong> font from <a href="https://fonts.google.com/">Google Fonts</a>, <a href="https://fonts.google.com">Google Fonts</a>. I decided to pick the ‘Lato’ Font, as its larger character height lends itself to easier readability at small sizes. Let’s read this font into R using the <code>font_add_()</code> command and tell <code>{showtext}</code> to automatically render the text:</p>
+<pre class="r"><code>font_add(&quot;lato&quot;, regular = &quot;lato-regular.ttf&quot;)
+showtext_auto()</code></pre>
+</div>
+</div>
+<div id="question-1" class="section level1">
+<h1>Question 1</h1>
+<p>Let’s read in our data and look over the information for question 1:</p>
+<blockquote>
+<p><font size="3"> In a repeated measures experiment participants had to respond to a word that appeared in one of three contexts. These were “Neutral”, “Negative”, and “Positive”. There were 24 participants and 24 items. Each item appeared in each of the three contexts. By building the appropriate mixed model, determine whether context influenced response time on the dependent variable (labelled “DV” and measured in milliseconds). </font></p>
+</blockquote>
+<p>Let’s read in our data using the <code>read_csv()</code> function. We’ve organised our files using a .Rproj type to ensure reproducibility. We can also glimpse the first 6 rows of our data using the <code>head()</code> function:</p>
+<pre class="r"><code>q1_data_raw &lt;- read_csv(&quot;assignment1_data1.csv&quot;)
+head(q1_data_raw)</code></pre>
+<pre><code>## # A tibble: 6 x 4
+##   subj  item     DV condition
+##   &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt; &lt;chr&gt;    
+## 1 S1    I1      867 Neutral  
+## 2 S1    I2     1111 Positive 
+## 3 S1    I3      771 Negative 
+## 4 S1    I4      626 Neutral  
+## 5 S1    I5     1333 Positive 
+## 6 S1    I6      846 Negative</code></pre>
 </div>
 
 
