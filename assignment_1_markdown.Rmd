@@ -1,10 +1,45 @@
 ---
-title: "Assignment_1_markdown"
+title: "Assignment 1"
 author: '10179889'
 date: "09/02/2022"
-output: html_document
+output: 
+  html_document:
+    theme: flatly
+    toc: true
+    toc_float: true
+    font:family: Lato
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+# Overview
+
+For this assignment, we have been provided with two different datasets. Using the knowledge we have gained from the workshops combined with further reading and wider resources, I will:
+
+- Wrangle and tidy the data
+- Summarise the data
+- Visualise the data
+- Build and interpret the appropriate models
+
+## Packages
+
+First, let's load in our packages using the `library()` function:
+
+```{r}
+library(tidyverse)
+library(lme4)
+library(lmerTest)
+library(performance)
+library(visdat)
+library(ggthemes)
+library(showtext)
+```
+
+The `{tidyverse}` package contains a collection of open source R packages that gives us access to a variety of useful functions and commands for data wrangling and visualisation. The `{showtext}` package enables us to load in and use over 1291 fonts from [Google Fonts](https://fonts.google.com/) for our data visualisations, whilst `{ggthemes}` contains extra themes for our plots. 
+
+
+The `{afex}`and`{emmeans}` packages will allow us to build ANOVA models and perform post-hoc analyses, respectively. We'll be using the `{afex]` package instead of the `aov()` function in base R as it allows us to build ANOVA models that will work for our experimental designs, as well as using type III sums of squares by default. Finally, `{visdat}` will help us to spot any missing data in our datasets.
+
+After downloading the **Lato** font from [Google Fonts](https://fonts.google.com/), 
