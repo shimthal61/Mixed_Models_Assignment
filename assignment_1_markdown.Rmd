@@ -127,6 +127,8 @@ model <- buildmer(Response_Time ~ Context +
                   q1_data_tidied)
 ```
 
+Response Time is predicted by our fixed effect of condition, plus the random effect of our items, such that we're modelling an individual baseline for each of our items. We're also modelling the random effect of our subjects, such that we're modelling a different intercept for each participant. 
+
 ```{r}
 model_1 <- lmer(Response_Time ~ Context + 
                     (1 + Context | Item) +

@@ -54,6 +54,8 @@ q1_descriptives %>%
 
 # If we attempt to build a model which takes into account the random effect of condition, item, and subject, we get a
 # warning suggesting we have too many parameters than our data supports
+
+
 q1_model <- lmer(RT ~ Condition + (1 + Condition | Subject) + (1 + Condition | Item), data = q1_data)
 
 q1_model <- lmer(RT ~ Condition + (1 | Subject) + (1 | Item), data = q1_data)
