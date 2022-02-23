@@ -79,7 +79,7 @@ q1_data_tidied <- q1_data_raw %>%
 head(q1_data_tidied)
 ```
 
-This is better - Our columns are coded correctly and are labelled meaningfully. Moreover, every row corresponds to one observation, which is key for building our models later.
+This is better - Our columns are coded correctly and are labelled meaningfully. Moreover, all data is currently in *long* format; every row corresponds to one observation, which is key for building our models later.
 
 ## Data Summarising
 
@@ -127,13 +127,30 @@ model <- buildmer(Response_Time ~ Context +
                   q1_data_tidied)
 ```
 
-Response Time is predicted by our fixed effect of condition, plus the random effect of our items, such that we're modelling an individual baseline for each of our items. We're also modelling the random effect of our subjects, such that we're modelling a different intercept for each participant. 
+Response Time is predicted by our fixed effect of condition, plus the random effect of our items, such that we're modelling an individual baseline for each of our items. We're also modelling the random effect of our subjects, such that we're modelling a different intercept for each participant.
 
 ```{r}
-model_1 <- lmer(Response_Time ~ Context + 
+q1_model <- lmer(Response_Time ~ Context + 
                     (1 + Context | Item) +
                     (1 + Context | Subject),
                   q1_data_tidied)
 ```
 
-However, when we build this model, we're outputted with the error message `?isSingular`. This tells us that our model that we've build, when considering the number of parameters we're trying to estimate, is more complex than our dataset will allow us to build. In other words, the model that we're trying to build is too complex relative to the richness (or lack of) of our dataset.
+However, when we build this model, we're outputted with the error message `?isSingular`. This tells us that our model that we've build, when considering the number of parameters we're trying to estimate, is more complex than our dataset will allow us to build. In other words, the model that we're trying to build is too complex relative to the richness (or lack of) (poverty??) of our dataset. We can choose to ignore the warning, since it is not a fatal error, especially if we had a strong theoretical reason to model all of the terms in the random effect structure. Alternatively, we could gradually simplify the random effects structure until we resolve the error.
+
+Let's first drop our random slopes:
+
+```{r}
+q1_model <- lmer(Response_Time ~ Context +
+                   (1 | Subject) +
+                   (1 |Item),
+                 data = q1_data_tidied)
+```
+
+Now, we have a model which does has not generated the warning. Our simpler model has response time predicted by context, whilst modelling the random effects of subjects and items, where each subject and item has its own baseline. However, because we've dropped modelling the random slopes, we're assuming that the difference between the three levels of our experimental condition are the same for all subjects and items. This increases the likelihood of a type 1 error occurring, leading us to think that we have an effect when one is not actually present.
+
+Before we move on, we should check to see whether our model adheres to normality assumptions. To do this, we can use the `check_model()` function found within the `{performance}` package. This will output a number of diagnostic plots, very similar to the assumptions in the context of the linear model, and it'll allow us to quickly tell whether our mixed model seems to be consistent with the assumptions behind mixed models.
+
+```{r}
+check_model(q1_model)
+```
