@@ -136,3 +136,4 @@ model_1 <- lmer(Response_Time ~ Context +
                   q1_data_tidied)
 ```
 
+However, when we build this model, we're outputted with the error message `?isSingular`. This tells us that our model that we've build, when considering the number of parameters we're trying to estimate, is more complex than our dataset will allow us to build. In other words, the model that we're trying to build is too complex relative to the richness (or lack of) of our dataset.
