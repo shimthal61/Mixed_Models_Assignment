@@ -33,6 +33,7 @@ library(lme4)
 library(lmerTest)
 library(performance)
 library(visdat)
+library(emmeans)
 library(ggthemes)
 library(showtext)
 library(buildmer)
@@ -165,11 +166,7 @@ We can ask for the output of our model using the `summary()` function.
 summary(q1_model)
 ```
 
-
-
 More of the random variability can be attributed to our subjects as oppose the the items. Critically, we are interested in our fixed effects. For our dummy coding, *R* using alphabetical information by default when choosing a reference level of our factor against which to compare the other levels of our factor. 
-
-
 
 which compares the Intercept (our Negative Context condition) to first the Neutral Context condition, then to the Positive Context condition. The average response times to our Negative condition are 1086.50 ms, which lets us work out the average response times for the other two conditions:
 
@@ -185,3 +182,29 @@ sum(1086.5 + 98.23)
 print(1086.5 + 170.8)
 ```
 
+Our model currently has two comparisons - Negative vs Neutral, and Negative vs Positive conditions. However, one of the issues with using default dummy coding is that there is one comparison that has not yet been conducted - Neutral vs Positive. As it stands, only part of the story has emerged. 
+
+Let's now compare our experimental model to a model which has dropped the fixed effect of context. First, we need to build this latter model, which we'll call our null model. This null model needs to be a subset of our full factorial model - we have to ensure that the random effects are the same in both models.
+
+```{r}
+q1_model_null <- lmer(Response_Time ~ 
+                        (1 | Subject) +
+                        (1 | Item),
+                    data = q1_data_tidied)
+```
+
+We can them compare our two models with the Likelihood Ratio Test within the `anova()` function:
+
+```{r, warning=FALSE, message=FALSE}
+anova(q1_model, q1_model_null)
+```
+
+If we have a look at our *p*-value, we can see that our two models differ significantly from each other (*p* < .001. Moreover, by looking at our deviance scores, the residual sums of squares is less for our model with our fixed effects. This tells us that our experimental manipulation seems to be making a difference. 
+
+Following this, we run to run pairwise comparisons where we control for the familywise error rate. We're going to use the `emmenas()` function from the `{emmeans}` package to run our multiple comparisons:
+
+```{r}
+emmeans(q1_model, pairwise ~ Context)
+```
+
+In this output, we get the estimates for our three experimental conditions, as well as our pairwise comparisons, which compares our condition with each other condition in all possible combinations. 
