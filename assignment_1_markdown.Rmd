@@ -184,7 +184,9 @@ print(1086.5 + 170.8)
 
 Our model currently has two comparisons - Negative vs Neutral, and Negative vs Positive conditions. However, one of the issues with using default dummy coding is that there is one comparison that has not yet been conducted - Neutral vs Positive. As it stands, only part of the story has emerged. 
 
-Let's now compare our experimental model to a model which has dropped the fixed effect of context. First, we need to build this latter model, which we'll call our null model. This null model needs to be a subset of our full factorial model - we have to ensure that the random effects are the same in both models.
+## Likelihood Ratio Test
+
+Let's now compare our experimental model to a model which has dropped the fixed effect of context. First, we need to build this latter model, which we'll call our null model. We'll use the likelihood ratio test (LRT) to assess whether the models are statistically different from each other. It is worth noting that models can only be compared to each other if they are nested - it is essential that our null model is a subset of our full factorial model, and contains the same random effects.
 
 ```{r}
 q1_model_null <- lmer(Response_Time ~ 
@@ -193,13 +195,13 @@ q1_model_null <- lmer(Response_Time ~
                     data = q1_data_tidied)
 ```
 
-We can them compare our two models with the Likelihood Ratio Test within the `anova()` function:
+We can them compare our two models with the LRT within the `anova()` function:
 
 ```{r, warning=FALSE, message=FALSE}
 anova(q1_model, q1_model_null)
 ```
 
-If we have a look at our *p*-value, we can see that our two models differ significantly from each other (*p* < .001. Moreover, by looking at our deviance scores, the residual sums of squares is less for our model with our fixed effects. This tells us that our experimental manipulation seems to be making a difference. 
+If we have a look at our *p*-value, we can see that our two models differ significantly from each other (*p* < .001. Moreover, by looking at our deviance scores, the residual sums of squares is less for our model with our fixed effects. This tells us that our experimental manipulation seems to be making a difference. Interestingly, the Akaike Information Criteron (AIC), which measures how much 'information' is not captured by our model, is lower in our factorial model (i.e. our fully factorial captures less information). However, it is also worth noting that absolute AIC values can only be interpreted relative to the ACI values from other models.
 
 Following this, we run to run pairwise comparisons where we control for the familywise error rate. We're going to use the `emmenas()` function from the `{emmeans}` package to run our multiple comparisons:
 
@@ -207,4 +209,16 @@ Following this, we run to run pairwise comparisons where we control for the fami
 emmeans(q1_model, pairwise ~ Context)
 ```
 
-In this output, we get the estimates for our three experimental conditions, as well as our pairwise comparisons, which compares our condition with each other condition in all possible combinations. 
+In this output, we get the estimates for our three experimental conditions, as well as our pairwise comparisons, which compares our condition with each other condition in all possible combinations. By default, the `{emmeans}` function uses the Tukey corrected comparisons method. If we correct for multiple comparisons, we see that only one pairwise comparison is significant - Negative vs Positive condition. The Neutral vs Positive conditions, which was significant in the model estimates earlier, is no longer significant when taking into account multiple comparisons. 
+
+## Conclusion
+In our model, where our experimental factor
+
+Post hoc comparisons applying Tukey correction confirmed that words appearing in Negative contexts resulted in significantly faster response times than words appearing in Positive contexts (*p* = .013, d = .), but not Neutral contexts (*p* = .145, d = ). The difference in response times given for words in Neutral contexts and Positive Contexts was not statistically significant (*p* = .312, d = ).
+
+By using a linear mixed models, we were able to model the individual variation due to participants and items, and build up a model which is able to take on board all of the information in our dataset. By working over the raw data points themselves, the linear mixed model approach uses a lot more information that is in the dataset. Finally, we can compare different models to each other using the Likelihood Ratio Test.
+
+# Question 2
+
+> <font size = "3"> In a 2 x 2 repeated measures experiment, participants had to respond to a face that depicted either “Anger” or “Fear”. Each face was presented after a Story Vignette that described either an angry or fearful situation. There were 32 participants and 32 vignettes. Two independent variables were manipulated within-participants in a fully factorial design; story emotion with two levels (Anger and Fear) and Face Expression with two levels (Anger and Fear). The time it took for participants to respond to the face, which was taken as a measure of reaction time, served as the dependent variable. </font>
+
