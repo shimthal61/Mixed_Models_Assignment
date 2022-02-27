@@ -338,3 +338,8 @@ q2_descriptives %>%
 
 We can see here that we have a crossover interaction as the polarity of the difference flips. The graph shows that Reaction Time was faster for Angry Face Expressions when the preceding story was also angry. Likewise, Reaction Time was faster for Fearful Face Expressions when the preceding story was also Fearful. Due to our crossover interaction, it is unlikely that we'll have significant main effects of *both* Story Emotion and Face Expression variables, but a significant interaction effect is likely.
 
+## Setting up our Contrasts
+
+*R* assigns Treatment Contrasts to factors and orders their levels alphabetically. This default mapping will only be correct for a given data=set if the levels' alphabetical ordering matches our desired contrast coding.
+
+When we're building models for factorial data in *R*, by default the factors are coded using dummy coding. This is problematic for models with interactions, as it makes it harder for us to interpret our parameter estimates, and critically, can result in misinterpretation of main vs simple effects. 
