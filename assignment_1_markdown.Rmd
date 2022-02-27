@@ -2,12 +2,14 @@
 title: "Assignment 1"
 author: '10179889'
 date: "09/02/2022"
-output: 
+output:
   html_document:
     theme: flatly
-    toc: true
-    toc_float: true
+    toc: yes
+    toc_float: yes
     font:family: Lato
+  pdf_document:
+    toc: yes
 ---
 
 ```{r setup, include=FALSE}
@@ -122,6 +124,8 @@ q1_data_tidied %>%
     coord_flip()
 ```
 
+<p>&nbsp;</p>
+
 ## Building our Linear Model
 
 ```{r}
@@ -167,7 +171,7 @@ We can ask for the output of our model using the `summary()` function.
 summary(q1_model)
 ```
 
-More of the random variability can be attributed to our subjects as oppose the the items. Critically, we are interested in our fixed effects. For our dummy coding, *R* using alphabetical information by default when choosing a reference level of our factor against which to compare the other levels of our factor. 
+More of the random variability can be attributed to our subjects as oppose the the items. Critically, we are interested in our fixed effects. For our dummy coding, *R* using alphabetical information by default when choosing a reference level of our factor against which to compare the other levels of our factor.
 
 which compares the Intercept (our Negative Context condition) to first the Neutral Context condition, then to the Positive Context condition. The average response times to our Negative condition are 1086.50 ms, which lets us work out the average response times for the other two conditions:
 
@@ -183,7 +187,7 @@ sum(1086.5 + 98.23)
 print(1086.5 + 170.8)
 ```
 
-Our model currently has two comparisons - Negative vs Neutral, and Negative vs Positive conditions. However, one of the issues with using default dummy coding is that there is one comparison that has not yet been conducted - Neutral vs Positive. As it stands, only part of the story has emerged. 
+Our model currently has two comparisons - Negative vs Neutral, and Negative vs Positive conditions. However, one of the issues with using default dummy coding is that there is one comparison that has not yet been conducted - Neutral vs Positive. As it stands, only part of the story has emerged.
 
 ## Likelihood Ratio Test
 
@@ -202,7 +206,7 @@ We can them compare our two models with the LRT within the `anova()` function:
 anova(q1_model, q1_model_null)
 ```
 
-If we have a look at our *p*-value, we can see that our two models differ significantly from each other (*p* < .001. Moreover, by looking at our deviance scores, the residual sums of squares is less for our model with our fixed effects. This tells us that our experimental manipulation seems to be making a difference. Interestingly, the Akaike Information Criteron (AIC), which measures how much 'information' is not captured by our model, is lower in our factorial model (i.e. our fully factorial captures less information). However, it is also worth noting that absolute AIC values can only be interpreted relative to the ACI values from other models.
+If we have a look at our *p*-value, we can see that our two models differ significantly from each other (*p* \< .001. Moreover, by looking at our deviance scores, the residual sums of squares is less for our model with our fixed effects. This tells us that our experimental manipulation seems to be making a difference. Interestingly, the Akaike Information Criteron (AIC), which measures how much 'information' is not captured by our model, is lower in our factorial model (i.e. our fully factorial captures less information). However, it is also worth noting that absolute AIC values can only be interpreted relative to the ACI values from other models.
 
 Following this, we run to run pairwise comparisons where we control for the familywise error rate. We're going to use the `emmenas()` function from the `{emmeans}` package to run our multiple comparisons:
 
@@ -210,9 +214,10 @@ Following this, we run to run pairwise comparisons where we control for the fami
 emmeans(q1_model, pairwise ~ Context)
 ```
 
-In this output, we get the estimates for our three experimental conditions, as well as our pairwise comparisons, which compares our condition with each other condition in all possible combinations. By default, the `{emmeans}` function uses the Tukey corrected comparisons method. If we correct for multiple comparisons, we see that only one pairwise comparison is significant - Negative vs Positive condition. The Neutral vs Positive conditions, which was significant in the model estimates earlier, is no longer significant when taking into account multiple comparisons. 
+In this output, we get the estimates for our three experimental conditions, as well as our pairwise comparisons, which compares our condition with each other condition in all possible combinations. By default, the `{emmeans}` function uses the Tukey corrected comparisons method. If we correct for multiple comparisons, we see that only one pairwise comparison is significant - Negative vs Positive condition. The Neutral vs Positive conditions, which was significant in the model estimates earlier, is no longer significant when taking into account multiple comparisons.
 
 ## Conclusion
+
 In our model, where our experimental factor
 
 Post hoc comparisons applying Tukey correction confirmed that words appearing in Negative contexts resulted in significantly faster response times than words appearing in Positive contexts (*p* = .013, d = .), but not Neutral contexts (*p* = .145, d = ). The difference in response times given for words in Neutral contexts and Positive Contexts was not statistically significant (*p* = .312, d = ).
@@ -221,7 +226,7 @@ By using a linear mixed models, we were able to model the individual variation d
 
 # Question 2
 
-> <font size = "3"> In a 2 x 2 repeated measures experiment, participants had to respond to a face that depicted either “Anger” or “Fear”. Each face was presented after a Story Vignette that described either an angry or fearful situation. There were 32 participants and 32 vignettes. Two independent variables were manipulated within-participants in a fully factorial design; story emotion with two levels (Anger and Fear) and Face Expression with two levels (Anger and Fear). The time it took for participants to respond to the face, which was taken as a measure of reaction time, served as the dependent variable. </font>
+> <font size = "3"> In a 2 x 2 repeated measures experiment, participants had to respond to a face that depicted either "Anger" or "Fear". Each face was presented after a Story Vignette that described either an angry or fearful situation. There were 32 participants and 32 vignettes. Two independent variables were manipulated within-participants in a fully factorial design; story emotion with two levels (Anger and Fear) and Face Expression with two levels (Anger and Fear). The time it took for participants to respond to the face, which was taken as a measure of reaction time, served as the dependent variable. </font>
 
 Let's read in our data using the `{tidyverse}` function `read_csv()`:
 
@@ -249,7 +254,7 @@ This is much better. We can use the `str()` function to explore our tibble in a 
 str(q2_data_tidied)
 ```
 
-We can see that `StoryEmotion` and `FaceExpression` have the two levels coded in.  
+We can see that `StoryEmotion` and `FaceExpression` have the two levels coded in.
 
 ## Data Summarising
 
@@ -267,7 +272,7 @@ Like the previous question, our output hasn't produced any NA results, so no nee
 
 ## Data Visualisation
 
-```{r, out.height="200%", out.width="200%"}
+```{r}
 q2_data_tidied %>% 
   ggplot(aes(x = StoryEmotion:FaceExpression, y = RT, colour = FaceExpression)) +
   geom_violin() +
@@ -283,68 +288,53 @@ q2_data_tidied %>%
   labs(x = "Story Emotion",
        y = "Reaction Time (ms. )",
        title = "Examining the Effect of Story Emotion\n and Face Expression on Reaction Time") +
-  theme(plot.title = element_text(size = 35, hjust = 0.5, line = 0.5, face = "bold"),
-      axis.title.x = element_text(size = 30),
-      axis.title.y = element_text(size = 30, hjust = 1),
-      text = element_text(family = "lato", size = 25)) +
+  theme(plot.title = element_text(size = 40, hjust = 0.5, margin = margin(b = 25), line = 0.5, face = "bold"),
+        axis.title.x = element_text(size = 30, margin = margin(t = 20)),
+        axis.title.y = element_text(size = 30, margin = margin(r = 20)),
+        text = element_text(family = "lato", size = 25)) +
   coord_flip()
 ```
 
-```{r}
-q2_data_tidied %>% 
-  ggplot(aes(x = StoryEmotion:FaceExpression, y = RT, colour = FaceExpression)) +
-  geom_violin(width = 0.6) +
-  geom_point(alpha = 0.2, position = position_jitter(width = 0.1, seed = 42)) +
-  stat_summary(fun.data = 'mean_cl_boot', colour = 'black') +
-  theme_minimal() +
-  scale_y_continuous(breaks = seq(0, 10000, by = 1250),
-                     limits = c(0, 10000)) +
-  scale_x_discrete(labels = c("Anger:Anger" = "Anger",
-                              "Anger:Fear" = "Anger",
-                              "Fear:Anger" = "Fear",
-                              "Fear:Fear" = "Fear")) +
-  labs(x = "Story Emotion",
-       y = "Reaction Time (ms. )",
-       title = "Examining the Effect of Story Emotion\n and Face Expression on Reaction Time") +
-  coord_flip()
-```
-
+<p>&nbsp;</p>
 
 We can also build an interaction plot to get an idea of any interactions that may be present. First, we'll bring the legend closer to the lines by creating a new dataset that includes the y-values of the points where both lines end. We also need the labels that will be at the end of the lines. For this we use the function `case_when()`.
 
 ```{r}
 labels <- q2_descriptives %>% 
   filter(StoryEmotion == "Fear") %>% 
-  mutate(label = case_when(FaceExpression == "Anger" ~ "Angry Face\n Expression",
-                           FaceExpression == "Fear" ~ "Fearful Face\n Expressions"))
+  mutate(label = case_when(FaceExpression == "Anger" ~ "Angry Face\nExpression",
+                           FaceExpression == "Fear" ~ "Fearful Face\nExpressions"))
 head(labels)
 ```
 
 Using the `descriptive_stats` dataset we created earlier, we can add the geom_text to our interaction plot and pass our dataset `labels` to the geom. Among the aesthetics, `geom_text()` includes the aesthetic label, which stands for the text we will add to the visualization. We've also scaled down the y-axis using the `scale_y_continuous()` function to visually increase the distance between the means, aiding interpretation.
 
-```{r, out.width="180%", out.height="180%"}
+```{r}
 q2_descriptives %>% 
   ggplot(aes(x = StoryEmotion, y = mean)) +
   geom_line(size = 1.2, aes(group = FaceExpression, colour = FaceExpression)) +
   geom_point(size = 2.6, aes(colour = FaceExpression), shape = 15) +
-  geom_text(size = 6.5, aes(label = label,
+  geom_text(size = 8, aes(label = label,
                           colour = FaceExpression),
             data = labels,
-            nudge_x = 0.12,
-            nudge_y = 80) +
+            nudge_x = 0.17,
+            nudge_y = 70,
+            lineheight = 0.5) +
   guides(colour = 'none') +
   scale_y_continuous(breaks = seq(1800, 2800, by = 200),
                      limits = c(1800, 2800)) +
   labs(x = "Story Emotion",
        y = "Reaction Time (ms. )",
-       title = "Examining the Interaction Between 
-       Story Emotion and Face Expression") +
-  theme_minimal() +
-  theme(text = element_text(family = "lato", size = 26),
-        plot.title = element_text(size = 30, hjust = 0.5, margin = margin(b = 35), face = "bold"),
-        axis.title.x = element_text(size = 30, margin = margin(t = 30)),
-        axis.title.y = element_text(size = 30, margin = margin(r = 30)),
-        plot.margin = unit(rep(1.2, 4), "cm"))
+       title = "Examining the Interaction Between\nStory Emotion and Face Expression") +
+  theme_hc() +
+  theme(plot.title = element_text(size = 40, hjust = 0.5, line = 0.5, margin = margin(b = 25), face = "bold"),
+        axis.title.x = element_text(size = 30, margin = margin(t = 20)),
+        axis.title.y = element_text(size = 30, margin = margin(r = 20)),
+        text = element_text(family = "lato", size = 25)
+        )
 ```
 
-We can see here that we have a crossover interaction as the polarity of the difference flips. The graph shows that Reaction Time was faster for Angry Face Expressions when the preceding story was also angry. Likewise, Reaction Time was faster for Fearful Face Expressions when the preceding story was also Fearful. Due to our crossover interaction, it is unlikely that we'll have significant main effects of *both* Story Emotion and Face Expression variables, but a significant interaction effect is likely. 
+<p>&nbsp;</p>
+
+We can see here that we have a crossover interaction as the polarity of the difference flips. The graph shows that Reaction Time was faster for Angry Face Expressions when the preceding story was also angry. Likewise, Reaction Time was faster for Fearful Face Expressions when the preceding story was also Fearful. Due to our crossover interaction, it is unlikely that we'll have significant main effects of *both* Story Emotion and Face Expression variables, but a significant interaction effect is likely.
+

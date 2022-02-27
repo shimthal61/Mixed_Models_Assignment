@@ -29,7 +29,7 @@ q2_data_tidied %>%
   labs(x = "Story Emotion",
        y = "Reaction Time (ms. )",
        title = "Examining the Effect of Story Emotion\n and Face Expression on Reaction Time") +
-  theme(plot.title = element_text(size = 25, hjust = 0.5, margin = margin(b = 35), face = "bold"),
+  theme(plot.title = element_text(size = 25, hjust = 0.5, margin = margin(b = 20), line = 0.5, face = "bold"),
         axis.title.x = element_text(size = 20, margin = margin(t = 30)),
         axis.title.y = element_text(size = 20, margin = margin(r = 30)),
         text = element_text(family = "lato", size = 15),
