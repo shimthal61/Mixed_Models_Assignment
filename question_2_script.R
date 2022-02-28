@@ -70,11 +70,12 @@ q2_model_max <- lmer(RT ~ StoryEmotion * FaceExpression +
                    (1 + StoryEmotion * FaceExpression | Vignette),
                  data = q2_data_tidied)
 
-buildmer <- buildmer(RT ~ StoryEmotion * FaceExpression +
-                       (1 + StoryEmotion * FaceExpression | Subject) +
-                       (1 + StoryEmotion * FaceExpression | Vignette),
-                     data = q2_data_tidied)
+q2_max_feas_model <- buildmer(RT ~ StoryEmotion * FaceExpression +
+                                (1 + StoryEmotion * FaceExpression | Subject) +
+                                (1 + StoryEmotion * FaceExpression | Vignette),
+                              data = q2_data_tidied)
 
-summary(buildmer)       
+summary(q2_max_feas_model)       
 
-
+check_model(q2_max_feas_model)
+            
