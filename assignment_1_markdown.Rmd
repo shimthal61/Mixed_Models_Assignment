@@ -340,6 +340,33 @@ We can see here that we have a crossover interaction as the polarity of the diff
 
 ## Setting up our Contrasts
 
-*R* assigns Treatment Contrasts to factors and orders their levels alphabetically. This default mapping will only be correct for a given data=set if the levels' alphabetical ordering matches our desired contrast coding.
+*R* assigns Treatment Contrasts to factors and orders their levels alphabetically. This default mapping will only be correct for a given data=set if the levels' alphabetical ordering matches our desired contrast coding. We're going to use sum contrast coding, where we want to end up with a mixed-model with the intercept equal to the grand mean of our experimental conditions. This makes it much easier to estimate the parameters in our model, and also ensures that we're interpreting main effects instead of simple effects. 
 
 When we're building models for factorial data in *R*, by default the factors are coded using dummy coding. This is problematic for models with interactions, as it makes it harder for us to interpret our parameter estimates, and critically, can result in misinterpretation of main vs simple effects. 
+
+```{r}
+contrasts(q2_data_tidied$StoryEmotion) <- contr.sum(2)
+contrasts(q2_data_tidied$FaceExpression) <- contr.sum(2)
+```
+
+Let's first create a maximal model where we attempt to model the most complex random effects structure - `StoryEmotion + FaceExpression * StoryEmotion : FaceExpression.` We're attempting to model our random effects such that the main effects *and* interaction effects differ for each of our participants and each vignettes. 
+
+```{r}
+q2_model_max <- lmer(RT ~ StoryEmotion * FaceExpression +
+                   (1 + StoryEmotion * FaceExpression | Subject) +
+                   (1 + StoryEmotion * FaceExpression | Vignette),
+                 data = q2_data_tidied)
+```
+
+When we try to build our maximal model, we receive a warning message telling us that it was unable to converge on a solution of a model that fits our dataset. In other words, our model is too complicated in relation to our data-set. To remedy this issue, we would normally need to attempt to fit multiple mixed-effect models with different parameters until we had one which doesn't result in the error message. However, using the `{buildmer}` package, after we specify our maximal model, the function `buildmer()` will find the largest
+
+To remedy this issue, we can simplify our random effect structure until we reach a model which fits our data-set with the right parameters. Let's simplify the random effects structure by dropping the interaction term for the subjects random effect: 
+
+```{r}
+q2_buildmer <- buildmer(RT ~ StoryEmotion * FaceExpression +
+                          (1 + StoryEmotion * FaceExpression | Subject) +
+                          (1 + StoryEmotion * FaceExpression | Vignette),
+                        data = q2_data_tidied)
+```
+
+
