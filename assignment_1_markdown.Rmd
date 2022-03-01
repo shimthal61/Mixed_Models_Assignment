@@ -35,6 +35,7 @@ library(lme4)
 library(lmerTest)
 library(performance)
 library(visdat)
+library(fitdistrplus)
 library(emmeans)
 library(ggthemes)
 library(showtext)
@@ -367,7 +368,7 @@ When we try to build our maximal model, we receive a warning message telling us 
 We can use the `{buildmer}` package to remedy this dilemma. The package consists of a number of functions designed to fit specific types of models. By piggybacking off the `lmer()` function from `{lme4}`, the  `buildmer()` function fits our mixed-effect model to find the maximal feasible model. The good thing about this package is that it uses the exact syntax as building a model in `{lme4}`. 
 
 ```{r, message=FALSE}
-q2_bulidmer_model <- buildmer(RT ~ StoryEmotion * FaceExpression +
+q2_buildmer_model <- buildmer(RT ~ StoryEmotion * FaceExpression +
                           (1 + StoryEmotion * FaceExpression | Subject) +
                           (1 + StoryEmotion * FaceExpression | Vignette),
                         data = q2_data_tidied)
@@ -401,11 +402,38 @@ check_model(q2_max_feas_model)
 
 Our model looks pretty good aside from the assessment of normality of residuals, where they seem to drop off at around 1.5 Standard Normal Distribution Quantiles. The 'tail' of our distribution seems to be causing problems. 
 
+We can use the package `{fitdistrplus}` to further investigate the data distribution. The function `descdist()` computes descriptive parameters of our distribution and provides a kewness-kurtosis plot on a Cullen and Frey graph.  
+
+```{r}
+descdist(q2_data_tidied$RT)
+```
+
+We have lots of different types of data distributions plotted on the Cullen and Frey graph, with our observed data indicated by the blue circle. It appears as though our dataset is quite far away from the theoretical normal distribution is, and is within the beta distribution. We can visualise the distribution using a histogram with density along the y-axis, and overlay the plot with a translucent density plot.
+
+```{r}
+q2_data_tidied  %>% 
+  ggplot(aes(x = RT)) +
+  geom_histogram(aes(y =..density..),
+                 binwidth = 100,
+                 colour = "black", fill = "black",
+                 alpha = 0.8) +
+  geom_density(alpha = .5, fill = "#FF6666") +
+  theme_minimal() +
+  labs(x = "Reaction Time (ms. )",
+       y = "Density",
+       title = "Density Plot Visualising out Beta Distribution") +
+  theme(plot.title = element_text(size = 40, hjust = 0.5, margin = margin(b = 25), line = 0.5, face = "bold"),
+        axis.title.x = element_text(size = 30, margin = margin(t = 20)),
+        axis.title.y = element_text(size = 30, margin = margin(r = 20)),
+        text = element_text(family = "lato", size = 25))
+```
+
+
+
 ### Interpreting the Interaction
 
-We can run pairwise comparisons using the `emmeans()` function. We need to specify our model, what interaction we want to run the t-tests on, and whether we want to change to correction method. By default, `{emmeans}` uses the Tukey correction method.
+We can run pairwise comparisons using the `emmeans()` function. We need to specify our model, what interaction we want to run the t-tests on, and whether we want to change the correction method. By default, `{emmeans}` uses the Tukey correction method, which will suffice for us since only a few of our comparisons are going to be theoretically meaningful. We can, therefore, carry out a Bonferroni adjustment manually by multiplying the calculated *p*-value by the number of theoretically meaningful comparisons. 
 
 ```{r}
 emmeans(q2_max_feas_model, pairwise ~ StoryEmotion*FaceExpression, adjust = "none")
 ```
-
