@@ -61,8 +61,8 @@ q2_descriptives %>%
         text = element_text(family = "lato", size = 25)
   )
 
-contrasts(q2_data_tidied$StoryEmotion) <- contr.sum(2)
-contrasts(q2_data_tidied$FaceExpression) <- contr.sum(2)
+contrasts(q2_data_tidied$StoryEmotion) <- matrix(c(.5, -.5))
+contrasts(q2_data_tidied$FaceExpression) <- matrix(c(.5, -.5))
 
 # Maximal model
 q2_model_max <- lmer(RT ~ StoryEmotion * FaceExpression +
@@ -70,12 +70,23 @@ q2_model_max <- lmer(RT ~ StoryEmotion * FaceExpression +
                    (1 + StoryEmotion * FaceExpression | Vignette),
                  data = q2_data_tidied)
 
-q2_max_feas_model <- buildmer(RT ~ StoryEmotion * FaceExpression +
+q2_buildmer_model <- buildmer(RT ~ StoryEmotion * FaceExpression +
                                 (1 + StoryEmotion * FaceExpression | Subject) +
                                 (1 + StoryEmotion * FaceExpression | Vignette),
                               data = q2_data_tidied)
 
-summary(q2_max_feas_model)       
+summary(q2_buildmer_model)       
+
+
+q2_max_feas_model <- lmer(RT ~ 1 + FaceExpression + StoryEmotion + FaceExpression:StoryEmotion + 
+                            (1 + FaceExpression | Subject) + 
+                            (1 + FaceExpression | Vignette),
+                          data = q2_data_tidied)
+
 
 check_model(q2_max_feas_model)
+
+summary(q2_max_feas_model)
+
+emmeans(q2_buildmer_model)
             
