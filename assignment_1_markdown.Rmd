@@ -363,24 +363,18 @@ q2_maximal_model <- lmer(RT ~ StoryEmotion * FaceExpression +
                  data = q2_data_tidied)
 ```
 
-When we try to build our maximal model, we receive a warning message telling us that it was unable to converge on a solution of a model that fits our dataset. In other words, our model is too complicated in relation to our data-set. To remedy this issue, we would normally need to simplify our random effect structure until we reach a model which fits our data-set with the appropriate parameters. This would mean continually building models in a backwards direction until we found a model which didn't spit out the `Model failed to converge...` warning message. As well as being time-consuming, this method is not guaranteed to produce the maximal feasible model.  
+When we try to build our maximal model, we receive a warning message telling us that it was unable to converge on a solution of a model that fits our dataset. In other words, our model is too complicated in relation to our data-set. To remedy this issue, we would normally need to simplify our random effect structure until we reach a model which fits our data-set with the appropriate parameters. This would mean continually building models in a backwards direction until we found a model which didn't spit out the `Model failed to converge...` warning message. As well as being time-consuming, this method is not guaranteed to produce the MFM.  
 
-We can use the `{buildmer}` package to remedy this dilemma. The package consists of a number of functions designed to fit specific types of models. By piggybacking off the `lmer()` function from `{lme4}`, the  `buildmer()` function fits our mixed-effect model to find the maximal feasible model. The good thing about this package is that it uses the exact syntax as building a model in `{lme4}`. 
+We can use the `{buildmer}` package to remedy this dilemma. The package consists of a number of functions designed to fit specific types of models. By piggybacking off the `lmer()` function from `{lme4}`, the  `buildmer()` function fits our mixed-effect model to find the MFM. The good thing about this package is that it uses the exact syntax as building a model in `{lme4}`, where the formula we first input is the maximal model we can possible build. 
 
 ```{r, message=FALSE}
-q2_buildmer_model <- buildmer(RT ~ StoryEmotion * FaceExpression +
+buildmer(RT ~ StoryEmotion * FaceExpression +
                           (1 + StoryEmotion * FaceExpression | Subject) +
                           (1 + StoryEmotion * FaceExpression | Vignette),
                         data = q2_data_tidied)
 ```
 
-The maximal feasible model has been developed for us, which we can inspect using the `summary()` function:
-
-```{r}
-summary(q2_buildmer_model)
-```
-
-At the beginning of this output, we are given the model formula:
+The maximal feasible model (MFM) has been developed for us, which has been specified in the `formula` part of our output:
 
 `RT ~ 1 + FaceExpression + StoryEmotion + FaceExpression:StoryEmotion + (1 + FaceExpression | Subject) + (1 + FaceExpression | Vignette)`
 
@@ -408,7 +402,7 @@ We can use the package `{fitdistrplus}` to further investigate the data distribu
 descdist(q2_data_tidied$RT)
 ```
 
-We have lots of different types of data distributions plotted on the Cullen and Frey graph, with our observed data indicated by the blue circle. It appears as though our dataset is quite far away from the theoretical normal distribution is, and is within the beta distribution. We can visualise the distribution using a histogram with density along the y-axis, and overlay the plot with a translucent density plot.
+We have lots of different types of data distributions plotted on the Cullen and Frey graph, with our observed data indicated by the blue circle. It appears as though our dataset is quite far away from the theoretical normal distribution is, and is within the Gamma distribution. We can visualise the distribution using a histogram with density along the y-axis, and overlay the plot with a translucent density plot.
 
 ```{r}
 q2_data_tidied  %>% 
@@ -428,7 +422,24 @@ q2_data_tidied  %>%
         text = element_text(family = "lato", size = 25))
 ```
 
+It looks as though we have a skewed normal distribution, which is typical of reaction time data. There is a point below which we don't have many reaction time measures because of physiological constraints. There is a cluster of points at around 1250ms. Finally, we have a number of trails on people who have slower reaction times, which produces the gradual gradient of the tail. 
+Our next step is to build a model and specify that that our data are of Gamma distribution. We can build this using the `glmer()` function, ensuring that we specify that `family = Gamma`. Gamma mixed models are often much harder to fit, so the random effect structure needs to be much more simplified. Like earlier, we can build the maximal feasible model using the `buildmer()` function. We'll keep nAGQ set to its default (1) for the time being.
 
+```{r}
+gamma_nAGQ_1 <- buildmer(RT ~ StoryEmotion * FaceExpression +
+                           (1 + StoryEmotion * FaceExpression | Subject) +
+                           (1 + StoryEmotion * FaceExpression | Vignette),
+                         family = Gamma,
+                         data = q2_data_tidied)
+```
+
+```{r}
+summary(gamma_nAGQ_1)
+```
+
+This is problematic - the model `buildmer()` has chosen as the maximal feasible formula is too simplistic:
+
+`RT ~ 1 + FaceExpression + StoryEmotion + 
 
 ### Interpreting the Interaction
 

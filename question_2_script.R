@@ -76,14 +76,15 @@ q2_model_max <- lmer(RT ~ StoryEmotion * FaceExpression +
                    (1 + StoryEmotion * FaceExpression | Vignette),
                  data = q2_data_tidied)
 
-q2_buildmer_model <- buildmer(RT ~ StoryEmotion * FaceExpression +
-                                (1 + StoryEmotion * FaceExpression | Subject) +
-                                (1 + StoryEmotion * FaceExpression | Vignette),
-                              data = q2_data_tidied)
+# Buildmer model
+buildmer(RT ~ StoryEmotion * FaceExpression +
+           (1 + StoryEmotion * FaceExpression | Subject) +
+           (1 + StoryEmotion * FaceExpression | Vignette),
+         data = q2_data_tidied)
 
-summary(q2_buildmer_model)       
 
 
+#Maximal feas model
 q2_max_feas_model <- lmer(RT ~ 1 + FaceExpression + StoryEmotion + FaceExpression:StoryEmotion + 
                             (1 + FaceExpression | Subject) + 
                             (1 + FaceExpression | Vignette),
@@ -143,3 +144,62 @@ q2_data_tidied  %>%
         axis.title.x = element_text(size = 30, margin = margin(t = 20)),
         axis.title.y = element_text(size = 30, margin = margin(r = 20)),
         text = element_text(family = "lato", size = 25))
+
+#Gamma model with nAGQ = 1 (default) - is quick
+gamma_nAGQ_1 <- buildmer(RT ~ StoryEmotion * FaceExpression +
+                           (1 + StoryEmotion * FaceExpression | Subject) +
+                           (1 + StoryEmotion * FaceExpression | Vignette),
+                         family = Gamma,
+                         data = q2_data_tidied)
+
+#Gamme model with nAGO = 0 (less accurate) - TAKES AGES
+gamma_nAGQ_0 <- buildmer(RT ~ StoryEmotion * FaceExpression +
+                           (1 + StoryEmotion * FaceExpression | Subject) +
+                           (1 + StoryEmotion * FaceExpression | Vignette),
+                         data = q2_data_tidied,
+                         family = Gamma,
+                         nAGQ = 0)
+
+summary(gamma_nAGQ_0) #
+summary(gamma_nAGQ_1) #
+
+# Null gamma model
+gamma_null <- buildmer(RT ~ (1 | Subject) + (1 | Vignette),
+                             family = Gamma,
+                             data = q2_data_tidied)
+
+glmer(RT ~ 1 + FaceExpression + StoryEmotion + FaceExpression:StoryEmotion + (1 | Subject),
+      family = Gamma,
+      data = q2_data_tidied)
+
+
+glmer(RT ~ FaceExpression * StoryEmotion +
+        (1 + StoryEmotion + FaceExpression | Subject) + 
+        (1 + StoryEmotion | Vignette),
+      data = q2_data_tidied,
+      family = Gamma,
+      nAGQ = 0)
+
+summary(test_model_1)
+
+# Potential maximal feasiblemodels
+
+RT ~ 1 + FaceExpression + StoryEmotion + FaceExpression:StoryEmotion + (1 + FaceExpression +
+                                                                          StoryEmotion + StoryEmotion:FaceExpression | Subject) + (1 + StoryEmotion + FaceExpression + StoryEmotion:FaceExpression |
+                                                                                                                                     Vignette)
+
+RT ~ 1 + FaceExpression + StoryEmotion + FaceExpression:StoryEmotion + (1 + FaceExpression + StoryEmotion |
+                                                                          Subject) + (1 + StoryEmotion + FaceExpression + StoryEmotion:FaceExpression | Vignette)
+
+RT ~ 1 + FaceExpression + StoryEmotion + FaceExpression:StoryEmotion + (1 + FaceExpression +
+                                                                          StoryEmotion | Subject) + (1 + StoryEmotion + FaceExpression + StoryEmotion:FaceExpression | Vignette)
+
+glmer(RT ~ 1 + FaceExpression + StoryEmotion + FaceExpression:StoryEmotion + (1 + FaceExpression +
+                                                                                StoryEmotion | Subject) + (1 + StoryEmotion + FaceExpression + StoryEmotion:FaceExpression | Vignette),
+      data = q2_data_tidied,
+      family = Gamma,
+      nAGQ = 0)
+
+glmer(RT ~ f1 + FaceExpression + StoryEmotion + FaceExpression:StoryEmotion + (1 | Subject),
+      data = q2_data_tidied,
+      family = Gamma)
