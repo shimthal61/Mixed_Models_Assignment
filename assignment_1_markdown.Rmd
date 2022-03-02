@@ -440,7 +440,7 @@ gamma_model <- buildmer(RT ~ StoryEmotion * FaceExpression +
                            (1 + StoryEmotion * FaceExpression | Vignette),
                          family = Gamma,
                          data = q2_data_tidied,
-                         buildmerControl(direction = c('order')))
+                        buildmerControl = buildmerControl(direction = 'order'))
 formula(gamma_model)
 ```
 
@@ -453,14 +453,14 @@ The maximal model that is actually capable of converging excludes our random slo
 Let's build a new model with `nAGQ = 0`.
 
 ```{r}
-gamma_model <- buildmer(RT ~ StoryEmotion * FaceExpression +
+gamma_model_nAGQ0 <- buildmer(RT ~ StoryEmotion * FaceExpression +
                            (1 + StoryEmotion * FaceExpression | Subject) +
                            (1 + StoryEmotion * FaceExpression | Vignette),
                         family = Gamma,
                         nAGQ = 0,
                         data = q2_data_tidied,
-                        buildmerControl(direction = c('order')))
-formula(gamma_model)
+                        buildmerControl = buildmerControl(direction = 'order'))
+formula(gamma_model_nAGQ0)
 ```
 
 This MFM is much more inclusive of our parameters. Let's compare our factorial model with normality assumptions against our new gamma model:
@@ -469,19 +469,31 @@ This MFM is much more inclusive of our parameters. Let's compare our factorial m
 summary(q2_maximal_model)
 ```
 
-Here we have a significant interaction between `StoryEmotion` and `FaceExpression`. How about in our Gamma model?
+This is as we predicted earlier in our interaction plot. We have no significant main effects of `StoryEmotion` of `FaceExpression`, but we do have a significant interaction between the two variables. How about in our `gamma_model_nAGQ0`?
 
 ```{r}
-summary(gamma_model)
+summary(gamma_model_nAGQ0)
 ```
 
-The interaction between our two main effects is still present. 
+This is interesting - the Gamma model has a very different output from the other model. 
 
 ### Interpreting the Interaction
 
-We can run pairwise comparisons using the `emmeans()` function. We need to specify our model, what interaction we want to run the t-tests on, and whether we want to change the correction method. By default, `{emmeans}` uses the Tukey correction method, which will suffice for us since only a few of our comparisons are going to be theoretically meaningful. We can, therefore, carry out a Bonferroni adjustment manually by multiplying the calculated *p*-value by the number of theoretically meaningful comparisons. 
+We can run pairwise comparisons using the `emmeans()` function. We need to specify our model, what interaction we want to run the t-tests on, and whether we want to change the correction method. By default, `{emmeans}` uses the Tukey correction method, which will suffice for us since only a few of our comparisons are going to be theoretically meaningful. We can, therefore, carry out a Bonferroni adjustment manually by multiplying the calculated *p*-value by the number of theoretically meaningful comparisons.
+
+The `emmeans()` function can't handle our `gamma_model` as it is currently of class `buildmer()`. Let's quickly pass on the MFM that `buildmer()` identified to a `glmer()`.
 
 ```{r}
-emmeans(q2_max_feas_model, pairwise ~ StoryEmotion*FaceExpression, adjust = "none")
+gamma_model_glmer <- glmer(RT ~ 1 + FaceExpression * StoryEmotion + 
+        (1 + FaceExpression + StoryEmotion | Subject) + 
+        (1 + StoryEmotion * FaceExpression | Vignette),
+      data = q2_data_tidied,
+      family = Gamma,
+      nAGQ = 0)
+```
+
+
+```{r}
+emmeans(gamma_model_glmer, pairwise ~ StoryEmotion*FaceExpression, adjust = "none")
 ```
 
