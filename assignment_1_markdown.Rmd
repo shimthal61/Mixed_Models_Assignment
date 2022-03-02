@@ -365,20 +365,31 @@ q2_maximal_model <- lmer(RT ~ StoryEmotion * FaceExpression +
 
 When we try to build our maximal model, we receive a warning message telling us that it was unable to converge on a solution of a model that fits our dataset. In other words, our model is too complicated in relation to our data-set. To remedy this issue, we would normally need to simplify our random effect structure until we reach a model which fits our data-set with the appropriate parameters. This would mean continually building models in a backwards direction until we found a model which didn't spit out the `Model failed to converge...` warning message. As well as being time-consuming, this method is not guaranteed to produce the MFM.  
 
-We can use the `{buildmer}` package to remedy this dilemma. The package consists of a number of functions designed to fit specific types of models. By piggybacking off the `lmer()` function from `{lme4}`, the  `buildmer()` function fits our mixed-effect model to find the MFM. The good thing about this package is that it uses the exact syntax as building a model in `{lme4}`, where the formula we first input is the maximal model we can possible build. 
+We can use the `{buildmer}` package to remedy this dilemma. The package consists of a number of functions designed to fit specific types of models. By using the `lmer()` function from `{lme4}`, the  `buildmer()` function fits our mixed-effect model to find the MFM. The good thing about this package is that it uses the exact syntax as building a model in `{lme4}`, where the formula we first input is the maximal model we can possible build. 
 
 ```{r, message=FALSE}
-buildmer(RT ~ StoryEmotion * FaceExpression +
+q2_maximal_model <- buildmer(RT ~ StoryEmotion * FaceExpression +
                           (1 + StoryEmotion * FaceExpression | Subject) +
                           (1 + StoryEmotion * FaceExpression | Vignette),
                         data = q2_data_tidied)
+formula(q2_maximal_model)
 ```
 
 The maximal feasible model (MFM) has been developed for us, which has been specified in the `formula` part of our output:
 
 `RT ~ 1 + FaceExpression + StoryEmotion + FaceExpression:StoryEmotion + (1 + FaceExpression | Subject) + (1 + FaceExpression | Vignette)`
 
-Our model contains the fixed main effects of `StoryEmotion` *plus* the main effect `FaceExpression` *plus* the interaction between the two factors. For our random effects, we have modeled the main effect of `StoryEmotion` to differ for each of our subjects, and to differ for each of our Vignettes. Due to `buildmer()` defining our model as being of a `buildmer` class, it is currently incompatibale with future functions, meaning that we currently cannot assess assumptions or investigate interactions. We do, however, know that the formula is for our model, and can map this onto a model of `lmer()` class:
+Our model contains the fixed main effects of `StoryEmotion` *plus* the main effect `FaceExpression` *plus* the interaction between the two factors. For our random effects, we have modeled the main effect of `StoryEmotion` to differ for each of our subjects, and to differ for each of our Vignettes. `buildmer()` adds terms in order of their contribution to a certain criterion, including that the most important random slopes be included first. The default criterion assesses the significance of the change in log-likelihood. For a very helpful vignette on using `buildmer` to automatically find and compare maximal mixed models, I Recommend this Vignette by Cesko C. Voeten, 2021. Click on the image below to access it. 
+
+<center>
+
+[![Link to Cesko C. Voeten vignette](..)
+
+</center>
+
+Find more about it [here](https://cran.r-project.org/web/packages/buildmer/vignettes/buildmer.html)
+
+Due to `buildmer()` defining our model as being of a `buildmer` class, it is currently incompatible with future functions, meaning that we currently cannot assess assumptions or investigate interactions. We do, however, know that the formula is for our model, and can map this onto a model of `lmer()` class:
 
 ```{r}
 q2_max_feas_model <- lmer(RT ~ 1 + FaceExpression + StoryEmotion + FaceExpression:StoryEmotion + (1 + FaceExpression | Subject) + (1 + FaceExpression | Vignette),
@@ -423,23 +434,43 @@ q2_data_tidied  %>%
 ```
 
 It looks as though we have a skewed normal distribution, which is typical of reaction time data. There is a point below which we don't have many reaction time measures because of physiological constraints. There is a cluster of points at around 1250ms. Finally, we have a number of trails on people who have slower reaction times, which produces the gradual gradient of the tail. 
-Our next step is to build a model and specify that that our data are of Gamma distribution. We can build this using the `glmer()` function, ensuring that we specify that `family = Gamma`. Gamma mixed models are often much harder to fit, so the random effect structure needs to be much more simplified. Like earlier, we can build the maximal feasible model using the `buildmer()` function. We'll keep nAGQ set to its default (1) for the time being.
+Our next step is to build a model and specify that that our data are of Gamma distribution. We can build this using the `glmer()` function, ensuring that we specify that `family = Gamma`. Gamma mixed models are often much harder to fit, so the random effect structure needs to be much more simplified. Like earlier, we can build the maximal feasible model using the `buildmer()` function.
 
 ```{r}
-gamma_nAGQ_1 <- buildmer(RT ~ StoryEmotion * FaceExpression +
+gamma_model <- buildmer(RT ~ StoryEmotion * FaceExpression +
                            (1 + StoryEmotion * FaceExpression | Subject) +
                            (1 + StoryEmotion * FaceExpression | Vignette),
                          family = Gamma,
-                         data = q2_data_tidied)
-```
-
-```{r}
-summary(gamma_nAGQ_1)
+                         data = q2_data_tidied,
+                         buildmerControl(direction = c('order')))
+formula(gamma_model)
 ```
 
 This is problematic - the model `buildmer()` has chosen as the maximal feasible formula is too simplistic:
 
-`RT ~ 1 + FaceExpression + StoryEmotion + 
+`RT ~ 1 + FaceExpression + StoryEmotion + StoryEmotion:FaceExpression`.
+
+The maximal model that is actually capable of converging, is one excluding our random slopes. To increase the parameters in our model, we'll need to modify the integer scalar within the `nAGQ` argument. Setting `nAGQ = 0` is less accurate that having it at its default `nAGQ = 1`, but it results in a higher chance of successful convergence [(Source: Stack Exchange)](https://stats.stackexchange.com/questions/544937/when-is-it-appropriate-to-set-nagq-0-in-glmer). 
+
+Let's build a new model with `nAGQ = 0`.
+
+```{r}
+gamma_model <- buildmer(RT ~ StoryEmotion * FaceExpression +
+                           (1 + StoryEmotion * FaceExpression | Subject) +
+                           (1 + StoryEmotion * FaceExpression | Vignette),
+                        family = Gamma,
+                        nAGQ = 0,
+                        data = q2_data_tidied,
+                        buildmerControl(direction = c('order')))
+formula(gamma_model)
+```
+
+This MFM is much more inclusive of our parameters. Let's compare our factorial model with normality assumptions against our new gamma model:
+
+```{r}
+summary(gamma_model)
+```
+
 
 ### Interpreting the Interaction
 

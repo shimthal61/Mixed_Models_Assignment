@@ -158,48 +158,36 @@ gamma_nAGQ_0 <- buildmer(RT ~ StoryEmotion * FaceExpression +
                            (1 + StoryEmotion * FaceExpression | Vignette),
                          data = q2_data_tidied,
                          family = Gamma,
-                         nAGQ = 0)
+                         nAGQ = 0,
+                         buildmerControl(direction = c('order', 'forward')))
 
-summary(gamma_nAGQ_0) #
-summary(gamma_nAGQ_1) #
+summary(gamma_nAGQ_0)
+summary(gamma_nAGQ_1)
 
-# Null gamma model
-gamma_null <- buildmer(RT ~ (1 | Subject) + (1 | Vignette),
-                             family = Gamma,
-                             data = q2_data_tidied)
+# Maximal model
 
-glmer(RT ~ 1 + FaceExpression + StoryEmotion + FaceExpression:StoryEmotion + (1 | Subject),
-      family = Gamma,
-      data = q2_data_tidied)
+max <- RT ~ StoryEmotion * FaceExpression +
+  (1 + StoryEmotion * FaceExpression | Subject) +
+  (1 + StoryEmotion * FaceExpression | Vignette)
 
+# Potential maximal feasible models
 
-glmer(RT ~ FaceExpression * StoryEmotion +
-        (1 + StoryEmotion + FaceExpression | Subject) + 
-        (1 + StoryEmotion | Vignette),
+glmer(RT ~ 1 + FaceExpression * StoryEmotion +
+        (1 + FaceExpression + StoryEmotion | Subject) + 
+        (1 + StoryEmotion * FaceExpression | Vignette),
       data = q2_data_tidied,
       family = Gamma,
       nAGQ = 0)
 
-summary(test_model_1)
-
-# Potential maximal feasiblemodels
-
-RT ~ 1 + FaceExpression + StoryEmotion + FaceExpression:StoryEmotion + (1 + FaceExpression +
-                                                                          StoryEmotion + StoryEmotion:FaceExpression | Subject) + (1 + StoryEmotion + FaceExpression + StoryEmotion:FaceExpression |
-                                                                                                                                     Vignette)
-
-RT ~ 1 + FaceExpression + StoryEmotion + FaceExpression:StoryEmotion + (1 + FaceExpression + StoryEmotion |
-                                                                          Subject) + (1 + StoryEmotion + FaceExpression + StoryEmotion:FaceExpression | Vignette)
-
-RT ~ 1 + FaceExpression + StoryEmotion + FaceExpression:StoryEmotion + (1 + FaceExpression +
-                                                                          StoryEmotion | Subject) + (1 + StoryEmotion + FaceExpression + StoryEmotion:FaceExpression | Vignette)
-
-glmer(RT ~ 1 + FaceExpression + StoryEmotion + FaceExpression:StoryEmotion + (1 + FaceExpression +
-                                                                                StoryEmotion | Subject) + (1 + StoryEmotion + FaceExpression + StoryEmotion:FaceExpression | Vignette),
-      data = q2_data_tidied,
-      family = Gamma,
-      nAGQ = 0)
-
-glmer(RT ~ f1 + FaceExpression + StoryEmotion + FaceExpression:StoryEmotion + (1 | Subject),
+glmer(RT ~ 1 + FaceExpression + (1 | Subject),
       data = q2_data_tidied,
       family = Gamma)
+
+test_model <- buildmer(max, data = q2_data_tidied, 
+                       family = Gamma,
+                       buildmerControl=buildmerControl(direction='order'),
+                       nAGQ = 0)
+
+formula(test_model)
+
+#To avoid bad practice (e.g. p-hacking), I'll make sure to report both graphs. 
