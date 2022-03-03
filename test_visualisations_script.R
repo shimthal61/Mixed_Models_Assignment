@@ -24,3 +24,19 @@ labels <- q2_descriptives %>%
   filter(StoryEmotion == "Fear") %>% 
   mutate(label = case_when(FaceExpression == "Anger" ~ "Angry Face\nExpression",
                            FaceExpression == "Fear" ~ "Fearful Face\nExpressions"))
+
+q1_data_tidied %>% 
+  ggplot(aes(x = Context, y = Response_Time, colour = Context)) +
+  geom_violin(width = 0.5) +
+  geom_point(alpha = 0.3, position = position_jitter(width = 0.08, seed = 42)) +
+  guides(colour = 'none') +
+  stat_summary(fun.data = 'mean_cl_boot', colour = 'black') +
+  labs(y = "Reaction Time (ms. )",
+       title = "Effect of Item Context on Reaction Time") +
+  theme_minimal() +
+  theme(
+    text = element_text(family = "lato", size = 28),
+    plot.title = element_text(size = 38, hjust = 0.5, margin = margin(b = 20), face = "bold"),
+    axis.title.x = element_text(size = 38, margin = margin(t = 20)),
+    axis.title.y = element_text(size = 38, margin = margin(r = 20))) +
+  coord_flip()

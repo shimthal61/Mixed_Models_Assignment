@@ -83,7 +83,7 @@ q1_data_tidied <- q1_data_raw %>%
 head(q1_data_tidied)
 ```
 
-This is better - Our columns are coded correctly and are labelled meaningfully. Moreover, all data is currently in *long* format; every row corresponds to one observation, which is key for building our models later. Using the `vis_miss()` function, we are provided with an at-a-glance plot of any missing data inside our dataframe.
+This is better - Our columns are coded correctly and are labelled meaningfully. Moreover, all data is currently in `long` format; every row corresponds to one observation, which is key for building our models later. Using the `vis_miss()` function, we are provided with an at-a-glance plot of any missing data inside our dataframe.
 
 ```{r}
 vis_miss(q1_data_tidied)
@@ -106,18 +106,18 @@ At a glance, it looks as though participants who were presented with items in a 
 
 ## Data Visualisations
 
-We first specify within `ggplot()` what data we want included in our visualisation. Following, we plot the raw data points using the `geom_point` function, as well as a violin plot to display our data density. If we were to use the `geom_jitter()` function to jitter our data, every time we execute the code, the points will jitter to a different position. This implies that our code is not reproducible, because we don't know the seed that *R* will use to generate the sequence. Inside `geom_point()`, however, we are able to set `seed = 42` to ensure that the output will be identical every time it is run. I set the seed to 42 for its reference to Hitch Hikers Guide to the Galaxy...
+We first specify within `ggplot()` what data we want included in our visualisation. We then plot the raw data points using the `geom_point` function, as well as a violin plot to display our data density. If we were to use the `geom_jitter()` function to jitter our data, every time we execute the code, the points will jitter to a different position. This implies that our code is not reproducible, because we don't know the seed that *R* will use to generate the sequence. Inside `geom_point()`, however, we are able to set `seed = 42` within the `position = position_jitter` argument to ensure that the output will be identical every time it is run. I set the seed to 42 for its reference to Hitch Hikers Guide to the Galaxy...
 
 I removed the legend using `guides(colour = 'none')` as it provides no additional information, as have added some summary data in the form of the Mean and Confidence Intervals using the `stat_summary()` function. We have dictated the y-axis breaks and limits within the `scale_y_continuous()` function so that our the range fully incorporates our data, and defined a . Within the `theme()` function, I've changed the plot font to `lato`, made appropriate the text size, and moved the axis and title text away from the graph within the `margin` argument. Finally, we have flipped the axes around as I believe that it aids overall interpretation of the results.
 
 ```{r, out.width="200%"}
 q1_data_tidied %>% 
     ggplot(aes(x = Context, y = Response_Time, colour = Context)) +
-    geom_violin(width = 0.5) +
-    geom_point(alpha = 0.3, position = position_jitter(width = 0.08, seed = 42)) +
+    geom_violin(width = 0.5, lwd = 0.7) +
+    geom_point(alpha = 0.2, position = position_jitter(width = 0.08, seed = 42)) +
     guides(colour = 'none') +
     stat_summary(fun.data = 'mean_cl_boot', colour = 'black') +
-    labs(y = "Reaction Time (ms. )",
+    labs(y = "Response Time (ms. )",
          title = "Effect of Item Context on Reaction Time") +
     scale_y_continuous(breaks = seq(0, 6000, by = 1000),
                        limits = c(0, 6000)) +
@@ -132,7 +132,7 @@ q1_data_tidied %>%
 
 <p>&nbsp;</p>
 
-Looking at our graph, it appears that participants did indeed respond quicker to items in `Negative` Contexts.  
+Looking at our graph, it appears that participants did indeed respond quicker to items in `Negative` Contexts. It also looks items presented in `Positive` contexts elicited slower responses, with `Neutral` contexts sitting in between the two. We can now build our linear mixed model to see whether the levels in our condition are statistically different from each other. 
 
 ## Building our Linear Model
 
