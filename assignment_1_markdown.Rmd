@@ -312,10 +312,18 @@ head(labels)
 Using the `descriptive_stats` dataset we created earlier, we can add the geom_text to our interaction plot and pass our dataset `labels` to the geom. Among the aesthetics, `geom_text()` includes the aesthetic label, which stands for the text we will add to the visualization. We've also scaled down the y-axis using the `scale_y_continuous()` function to visually increase the distance between the means, aiding interpretation.
 
 ```{r}
+q2_descriptives <- q2_data_tidied %>% 
+  group_by(StoryEmotion, FaceExpression) %>% 
+  summarise(mean = mean(RT), sd = sd(RT)) %>% 
+  arrange(mean)
+head(q2_descriptives)
+```
+
+```{r}
 q2_descriptives %>% 
   ggplot(aes(x = StoryEmotion, y = mean)) +
   geom_line(aes(linetype = FaceExpression, group = FaceExpression, colour = FaceExpression), 
-            alpha =0.8, size = 1.2) +
+            alpha =0.8, size = 1.2, show.legend = FALSE) +
   geom_point(size = 2.6, aes(colour = FaceExpression), shape = 15) +
   geom_text(size = 8, aes(label = label,
                           colour = FaceExpression),
@@ -333,10 +341,9 @@ q2_descriptives %>%
   theme(plot.title = element_text(size = 40, hjust = 0.5, line = 0.5, margin = margin(b = 25), face = "bold"),
         axis.title.x = element_text(size = 30, margin = margin(t = 20)),
         axis.title.y = element_text(size = 30, margin = margin(r = 20)),
-        text = element_text(family = "lato", size = 25) +
-          scale_linetype_manual(guide = "none")
-        )
+        text = element_text(family = "lato", size = 25))
 ```
+
 
 <p>&nbsp;</p>
 
