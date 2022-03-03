@@ -59,11 +59,27 @@ q1_descriptives %>%
 # If we attempt to build a model which takes into account the random effect of condition, item, and subject, we get a
 # warning suggesting we have too many parameters than our data supports
 
-
-q1_model <- lmer(RT ~ Condition + (1 + Condition | Subject) + (1 + Condition | Item), data = q1_data)
-
 q1_model <- lmer(RT ~ Condition + (1 | Subject) + (1 | Item), data = q1_data)
 
 check_model(q1_model)
 
+x <- check_normality(q1_model)
+
 summary(q1_model)
+
+check_outliers(q1_model)
+
+descdist(q1_data_tidied$Response_Time)
+
+q1_model <- buildmer(Response_Time ~ Condition + (1 + Condition | Subject) + (1 + Condition | Item),
+                     data = q1_data_tidied,
+                     family = Gamma,
+                     nAGQ = 0,
+                     buildmerControl = buildmerControl(direction = 'order'))
+  formula(q1_model)
+
+view(q1_data_tidied)
+  
+q1_data_tidied %>% 
+  filter(Response_Time > 4000)
+  

@@ -191,3 +191,4 @@ test_model <- buildmer(max, data = q2_data_tidied,
 formula(test_model)
 
 #To avoid bad practice (e.g. p-hacking), I'll make sure to report both graphs. 
+

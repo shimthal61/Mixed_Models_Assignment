@@ -136,25 +136,16 @@ Looking at our graph, it appears that participants did indeed respond quicker to
 
 ## Building our Linear Mixed-Model
 
-Let's first create our maximal model using the `lmer()` function with the following syntax: 
+Let's first create our maximal model using the `lmer()` function. We're asking for `Response_Time` to be predicted by fixed effect, `Context`, plus the random effect of `Item`, plus the random effect of `Subject`. This means that we're modelling an individual baseline response time for each of our items and random effects. Within our random effects, our model takes into consideration that the difference between the three levels of our experimental factor might vary between subjects and items. Finally, we're passing this all on to a variable called `q1_model_max`.
 
 ```{r}
-q1_model <- lmer(Response_Time ~ Context + 
+q1_model_max <- lmer(Response_Time ~ Context + 
                     (1 + Context | Item) +
                     (1 + Context | Subject),
                   q1_data_tidied)
 ```
 
-We're asking for `Response_Time` to be predicted by fixed effect, `Context`, plus the random effect of `Item`, plus the random effect of `Subject`. This means that we're modelling an individual baseline response time for each of our items and random effects. Within our random effects, our model takes into consideration that the difference between the three levels of our experimental factor might vary between subjects and items. Finally, we're passing this all on on to a variable called `q1_model()`.
-
-```{r}
-q1_model <- lmer(Response_Time ~ Context + 
-                    (1 + Context | Item) +
-                    (1 + Context | Subject),
-                  q1_data_tidied)
-```
-
-However, when we build this model, we're outputted with the error message `?isSingular` - we have obtained a singular fit. This indicates that the model that we've built, when considering the number of parameters we're trying to estimate, is more complex than our dataset will allow us to build. In other words, the random effect structure is too complex relative to the richness (or lack of) of our dataset. We can choose to ignore the warning, since it is not a fatal error, especially if we had a strong theoretical reason to model all of the terms in the random effect structure. Alternatively, we could gradually simplify the random effects structure until we resolve the error. The benefit of this approach is that it leads to a more parsimonious model that is not over-fitted.
+When we build this model, we're outputted with the error message `?isSingular` - we have obtained a singular fit. This indicates that the model that we've built, when considering the number of parameters we're trying to estimate, is more complex than our dataset will allow us to build. In other words, the random effect structure is too complex relative to the richness (or lack of) of our dataset. We can choose to ignore the warning, since it is not a fatal error, especially if we had a strong theoretical reason to model all of the terms in the random effect structure. Alternatively, we could gradually simplify the random effects structure until we resolve the error. The benefit of this approach is that it leads to a more parsimonious model that is not over-fitted.
 
 ### Using `buildmer()` to Fit our Model
 
@@ -173,15 +164,58 @@ formula(q1_buildmer_model)
 
 Our MFM has response time predicted by context, whilst modelling the random effects of subjects and items, where each subject and item has its own baseline. However, because we've dropped the random slopes, we're assuming that the difference between the three levels of our experimental condition are the same for all subjects and items. It is worth considering that this increases the likelihood of a type 1 error occurring, leading us to think that we have an effect when one is not actually present.
 
-### Checking Normality Assumptions
+For a very helpful demonstration on using `buildmer` to automatically find and compare maximal mixed models, I recommend this vignette by Cesko C. Voeten, 2021. Click on the image below to access it. 
 
-Before we move on, we should check to see whether our model adheres to normality assumptions. To do this, we can use the `check_model()` function found within the `{performance}` package. This will output a number of diagnostic plots, very similar to the assumptions in the context of the linear model, and it'll allow us to quickly tell whether our mixed model seems to be consistent with the assumptions behind mixed models.
+<center>
+
+[![Link to Cesko C. Voeten vignette](buildmer.png){width=75%}](https://cran.r-project.org/web/packages/buildmer/vignettes/buildmer.html)
+
+</center>
+
+Before we continue, it is worth noting that the model that `buildmer` has fit is currently defined as being of `buildmer` class. This means that the model is incompatible with future functions - we assess assumptions or investigate interactions. Luckily, we know the formula for this model, which we can map onto a new variable of `lmer` class:
 
 ```{r}
-check_model(q1_model)
+q1_MFM_model <- lmer(Response_Time ~ Context + 
+                   (1 | Item) +
+                   (1 | Subject),
+                  q1_data_tidied)
 ```
 
-Although our model seems to break down a little with its normality of residuals, the assumptions seem mostly to have been met ("all models are wrong, but some are useful" - George Box).
+
+### Checking Normality Assumptions
+
+Before we move on, we should check to see whether our model adheres to normality assumptions. To do this, we can use the `check_model()` function found within the `{performance}` package. This will output a number of diagnostic plots and allow us to quickly tell whether our mixed model seems to be consistent with the assumptions behind mixed models.
+
+```{r}
+check_model(q1_MFM_model)
+```
+
+This is interesting - our model seems to have some deviation in its normality of residuals, as well as a few influential observations. The `{performance}` package contains a variety of functions which allows us to check normality assumptions a little more closely. The `check_normality()` function uses the Shapiro-Wilks test for normality, where a *p*-value less than or equal to .05 states with 95% confidence that the data does not fit the normal distribution. However, it is worth noting that this formal test *almost always* yields significant results for the distribution of residuals. 
+
+```{r}
+check_normality(q1_MFM_model)
+```
+
+With a *p* < .001, it is clear that we have skewed residuals. We can also check to see where our influential observations lie, using the `check_outliers()` function:
+
+```{r}
+results <- check_outliers(q1_MFM_model)
+plot(results, type = "bars")
+```
+
+We are told that we have two outliers We can do a simple search for them using `filter()` to gather response times larger than 3600.
+
+```{r}
+q1_data_tidied %>% 
+  filter(Response_Time > 3600)
+```
+
+With this new information, we could 
+
+We could build a new model to  
+
+
+Although our model seems to break down a little a its normality of residuals, the assumptions seem mostly to have been met. ("all models are wrong, but some are useful" - George Box).
 
 We can ask for the output of our model using the `summary()` function.
 
@@ -406,13 +440,7 @@ The maximal feasible model (MFM) has been developed for us, which has been speci
 
 `RT ~ 1 + FaceExpression + StoryEmotion + FaceExpression:StoryEmotion + (1 + FaceExpression | Subject) + (1 + FaceExpression | Vignette)`
 
-Our model contains the fixed main effects of `StoryEmotion` *plus* the main effect `FaceExpression` *plus* the interaction between the two factors. For our random effects, we have modeled the main effect of `StoryEmotion` to differ for each of our subjects, and to differ for each of our Vignettes. For a very helpful demonstration on using `buildmer` to automatically find and compare maximal mixed models, I recommend this vignette by Cesko C. Voeten, 2021. Click on the image below to access it. 
-
-<center>
-
-[![Link to Cesko C. Voeten vignette](buildmer.png){width=75%}](https://cran.r-project.org/web/packages/buildmer/vignettes/buildmer.html)
-
-</center>
+Our model contains the fixed main effects of `StoryEmotion` *plus* the main effect `FaceExpression` *plus* the interaction between the two factors. For our random effects, we have modeled the main effect of `StoryEmotion` to differ for each of our subjects, and to differ for each of our Vignettes.
 
 Due to `buildmer()` defining our model as being of a `buildmer` class, it is currently incompatible with future functions, meaning that we currently cannot assess assumptions or investigate interactions. We do, however, know that the formula is for our model, and can map this onto a model of `lmer()` class:
 
