@@ -104,7 +104,7 @@ In this visualisation, we're jittering the data points, meaning that every time 
 
 Next, we can build a visualisation by plotting the raw data points using the `geom_point` function, and the shape of the distribution for each condition using the `geom_violin()` function. We have also added some summary data in the form of the Mean and Confidence Intervals using the `stat_summary()` function. We can dictate the y-axis breaks within the `scale_y_continuous()` function, and change the text font, size, and margin within the `theme()` argument. Finally, we flip the Cartesian coordinates so that the horizontal becomes the vertical and vice versa.
 
-```{r, out.width="180%", out.height="180%"}
+```{r, out.width="200%"}
 q1_data_tidied %>% 
     ggplot(aes(x = Context, y = Response_Time, colour = Context)) +
     geom_violin(width = 0.5) +
@@ -117,11 +117,10 @@ q1_data_tidied %>%
                        limits = c(0, 6000)) +
     theme_minimal() +
     theme(
-      text = element_text(family = "lato", size = 20),
-      plot.title = element_text(size = 35, hjust = 0.5, margin = margin(b = 20), face = "bold"),
-      axis.title.x = element_text(size = 28, margin = margin(t = 20)),
-      axis.title.y = element_text(size = 28, margin = margin(r = 20)),
-      plot.margin = unit(rep(1.2, 4), "cm")) +
+      text = element_text(family = "lato", size = 28),
+      plot.title = element_text(size = 38, hjust = 0.5, margin = margin(b = 20), face = "bold"),
+      axis.title.x = element_text(size = 38, margin = margin(t = 20)),
+      axis.title.y = element_text(size = 38, margin = margin(r = 20))) +
     coord_flip()
 ```
 

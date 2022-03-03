@@ -70,7 +70,7 @@ q1_data_tidied %>%
 
 ## New model
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, out.width="200%"}
 q1_data_tidied %>% 
     ggplot(aes(x = Context, y = Response_Time, colour = Context)) +
     geom_violin(width = 0.5) +
