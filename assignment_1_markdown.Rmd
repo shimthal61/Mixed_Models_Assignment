@@ -31,10 +31,10 @@ First, let's load in our packages using the `library()` function:
 
 ```{r, message = FALSE, warning = FALSE}
 library(tidyverse)
+library(visdat)
 library(lme4)
 library(lmerTest)
 library(performance)
-library(visdat)
 library(fitdistrplus)
 library(emmeans)
 library(ggthemes)
@@ -42,9 +42,9 @@ library(showtext)
 library(buildmer)
 ```
 
-The `{tidyverse}` package contains a collection of open source R packages that gives us access to a variety of useful functions and commands for data wrangling and visualisation. The `{showtext}` package enables us to load in and use over 1291 fonts from [Google Fonts](https://fonts.google.com/) for our data visualisations, whilst `{ggthemes}` contains extra themes for our plots. The `{afex}`and`{emmeans}` packages will allow us to build ANOVA models and perform post-hoc analyses, respectively. We'll be using the `{afex]` package instead of the `aov()` function in base R as it allows us to build ANOVA models that will work for our experimental designs, as well as using type III sums of squares by default. Finally, `{visdat}` will help us to spot any missing data in our datasets.
+The `{tidyverse}` package contains a collection of open source R packages that gives us access to a variety of useful functions and commands for data wrangling and visualisation. We can use the `{visdat}` package to visualize our data. This makes it easy to identify problems, such as missing data. `{lme4}` provides us the functions for fitting and analyzing the mixed models we'll be building later, while `{lmerTest}` provides us with the *p*-values for our models. The `{performance}` lets us visually check our models across various assumptions, such as normality of residuals. We can use the `descdist()` function within `{fitdistrplus}` to identify our data distribution along a Cullen and Frey graph. The `{emmeans}` package provides us with the means to conduct pairwise comparisons on our models. One of the most useful packages I've come across is `buildmer()`.After feeding it our maximal mixed model, it will fit all different parameters of the model until it finds the model with maximal *feasible* model. This automated process not only saves time, but ensures that the final model contains as many of our parameters as possible. The `{showtext}` package enables us to load in and use over 1291 fonts from [Google Fonts](https://fonts.google.com/) for our data visualisations, whilst `{ggthemes}` contains extra themes for our plots. 
 
-To be able to dictate the font family later, we first need to download a font from [Google Fonts](https://fonts.google.com/). I decided to pick the *Lato* Font, as its larger character height lends itself to easier readability at small sizes. Within the `font_add()` command, we can read in our font by specifying what name to assign to our font as well as the path to the font file. Finally, we tell `{showtext}` to automatically render the text:
+To be able to dictate the font family later, we first need to download a font from [Google Fonts](https://fonts.google.com/). I decided to pick the *Lato* Font, as its larger character height lends itself to easier readability at small sizes. Within the `font_add()` command, we dictate what name to assign to our font as well as the pathway to the file. Finally, we tell `{showtext}` to automatically render the text everytime it's called on.
 
 ```{r}
 font_add("lato", regular = "Lato-regular.ttf", bold = "Lato-Bold.ttf")
@@ -57,7 +57,7 @@ Let's read in our data and look over the information for question 1:
 
 > <font size = "3"> We have 24 participants in a repeated measures design where we are interested in the effect of context on response time. Our experimental factor (Context) has 3 levels (Neutral vs. Negative vs. Positive). The time it took for participants to respond, which was taken as a measure of reaction time in milliseconds, served as the dependent variable. There were 24 items, and each item appeared in each of the three contexts. </font>
 
-Let's read in our data using the `read_csv()` function. We've organised our files using a .Rproj type to ensure reproducibility. We can also glimpse the first 6 rows of our data using the `head()` function:
+Let's read in our data using the `read_csv()` function - we've organised our files using a .Rproj type to ensure reproducibility. We can glimpse the first 6 rows of our data using the `head()` function:
 
 ```{r, message = FALSE}
 q1_data_raw <- read_csv("assignment1_data1.csv")
@@ -72,7 +72,7 @@ Using the `str()` function, we can display the structure of our data.
 str(q1_data_raw)
 ```
 
-As it currently stands, our `subj`, `item`, and `condition` columns are not coded as factors. We can use the `transmute()` function to replace these variables with their factorised equivalents. Within this argument, we can also change the column names to make them more meaningful. We'll pass this on to a new variable, which we'll call `q1_data_tidied`:
+As it currently stands, our `subj`, `item`, and `condition` columns are not coded as factors, but simply as characters (`chr`). We can use the `transmute()` function to replace these variables with their factorised equivalents. Within this argument, we can also change the column names to make them more meaningful. We'll pass this on to a new variable, which we'll call `q1_data_tidied`:
 
 ```{r}
 q1_data_tidied <- q1_data_raw %>% 
@@ -83,11 +83,17 @@ q1_data_tidied <- q1_data_raw %>%
 head(q1_data_tidied)
 ```
 
-This is better - Our columns are coded correctly and are labelled meaningfully. Moreover, all data is currently in *long* format; every row corresponds to one observation, which is key for building our models later.
+This is better - Our columns are coded correctly and are labelled meaningfully. Moreover, all data is currently in *long* format; every row corresponds to one observation, which is key for building our models later. Using the `vis_miss()` function, we are provided with an at-a-glance plot of any missing data inside our dataframe.
+
+```{r}
+vis_miss(q1_data_tidied)
+```
+
+All our data is present - let's generate some summary statistics to get an understanding of any effects in our data.
 
 ## Data Summarising
 
-Let's create a tibble for the summary statistics of our dataset. We'll first utilise the `group_by()` function to gather our visual-quality variable, then `summarise()` to create a new table consisting of Response Time mean and standard deviation. The data can be arranged from the fastest mean Response Time to the slowest using the `arrange()` function:
+Let's create a tibble for the summary statistics of our dataset. We'll first utilise the `group_by()` function to gather our Context variable, then `summarise()` to create a new table consisting of Response Time mean and standard deviation. The data can be arranged from the fastest mean Response Time to the slowest using the `arrange()` function:
 
 ```{r}
 q1_data_tidied %>% 
@@ -96,13 +102,13 @@ q1_data_tidied %>%
   arrange(mean_RT)
 ```
 
-At a glance, it looks as though participants who were presented a items in a negative context had faster response times than those who were presented with items in neutral or postive contexts. Since the output returned no NA results, we know that there is no missing data and therefore no reason to use the `vis_dat()` function to locate the missing data. At this stage, we can create some data visualisations to better present our results.
+At a glance, it looks as though participants who were presented with items in a negative context had faster response times than those who were presented with items in neutral or positive contexts. At this stage, we can create some data visualisations to better present our results.
 
 ## Data Visualisations
 
-In this visualisation, we're jittering the data points, meaning that every time we execute the code, the points will jitter to a different position. This implies that our code is not reproducible, because we don't know the seed that R will use to generate the sequence. By setting the seed using the `set.seed()` function, we can ensure that the output will be the same every time it is run. I set the seed to 42 for its reference to Hitch Hikers Guide to the Galaxy...
+We first specify within `ggplot()` what data we want included in our visualisation. Following, we plot the raw data points using the `geom_point` function, as well as a violin plot to display our data density. If we were to use the `geom_jitter()` function to jitter our data, every time we execute the code, the points will jitter to a different position. This implies that our code is not reproducible, because we don't know the seed that *R* will use to generate the sequence. Inside `geom_point()`, however, we are able to set `seed = 42` to ensure that the output will be identical every time it is run. I set the seed to 42 for its reference to Hitch Hikers Guide to the Galaxy...
 
-Next, we can build a visualisation by plotting the raw data points using the `geom_point` function, and the shape of the distribution for each condition using the `geom_violin()` function. We have also added some summary data in the form of the Mean and Confidence Intervals using the `stat_summary()` function. We can dictate the y-axis breaks within the `scale_y_continuous()` function, and change the text font, size, and margin within the `theme()` argument. Finally, we flip the Cartesian coordinates so that the horizontal becomes the vertical and vice versa.
+I removed the legend using `guides(colour = 'none')` as it provides no additional information, as have added some summary data in the form of the Mean and Confidence Intervals using the `stat_summary()` function. We have dictated the y-axis breaks and limits within the `scale_y_continuous()` function so that our the range fully incorporates our data, and defined a . Within the `theme()` function, I've changed the plot font to `lato`, made appropriate the text size, and moved the axis and title text away from the graph within the `margin` argument. Finally, we have flipped the axes around as I believe that it aids overall interpretation of the results.
 
 ```{r, out.width="200%"}
 q1_data_tidied %>% 
@@ -125,6 +131,8 @@ q1_data_tidied %>%
 ```
 
 <p>&nbsp;</p>
+
+Looking at our graph, it appears that participants did indeed respond quicker to items in `Negative` Contexts.  
 
 ## Building our Linear Model
 
@@ -381,7 +389,7 @@ q2_maximal_model <- buildmer(RT ~ StoryEmotion * FaceExpression +
                           (1 + StoryEmotion * FaceExpression | Subject) +
                           (1 + StoryEmotion * FaceExpression | Vignette),
                         data = q2_data_tidied,
-                        buildmerControl = buildmerControl(direction = 'order'))
+                        buildmerControl = buildmerControl(direction = 'order', quiet = TRUE))
 formula(q2_maximal_model)
 ```
 
