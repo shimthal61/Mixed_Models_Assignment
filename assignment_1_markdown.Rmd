@@ -248,6 +248,41 @@ q1_data_tidied  %>%
 
 It looks as though we have something similar to the Gamma distribution, which is typical of reaction time data. There is a point below which we don't have many reaction time measures because of physiological constraints. We also have a number of observations of people who have slower reaction times, which produces the gradual gradient of the tail. 
 
+In this situation, we can build a model and specify that that our data are of Gamma distribution. We can build this using the `buildmer()` function, ensuring that we specify that `family = Gamma`. Gamma mixed models are often much harder to fit, so the random effect structure might have to be much simpler.
+
+```{r}
+q1_gamma_buildmer <- buildmer(Response_Time ~ Context +
+                            (1 + Context | Subject) +
+                            (1 + Context | Item),
+                          data = q1_data_tidied,
+                          family = Gamma,
+                          buildmerControl = buildmerControl(direction = 'order',
+                                                            quiet = TRUE))
+formula(q1_gamma_buildmer)
+```
+
+This is problematic - the model `buildmer()` has chosen as the maximal feasible formula is too simplistic:
+
+`Response_Time ~ 1 + Context`.
+
+The maximal model that is actually capable of converging excludes our random effects. To increase the parameters in our model, we'll need to modify the integer scalar within the `nAGQ` argument. Setting `nAGQ = 0` is less accurate that having it at its default `nAGQ = 1`, but it results in a higher chance of successful convergence [(Source: Stack Exchange)](https://stats.stackexchange.com/questions/544937/when-is-it-appropriate-to-set-nagq-0-in-glmer). 
+
+Let's build a new model with `nAGQ = 0`.
+
+```{r}
+q1_gamma_model_nAGQ0 <- buildmer(Response_Time ~ Context +
+                           (1 + Context | Subject) +
+                           (1 + Context | Vignette),
+                        family = Gamma,
+                        nAGQ = 0,
+                        data = q1_data_tidied,
+                        buildmerControl = buildmerControl(direction = 'order',
+                                                          quiet = TRUE))
+formula(q1_gamma_model_nAGQ0)
+```
+
+This MFM is much more inclusive of our parameters. Later on, when interpreting our results, we'll examine both models to see whether the same story emerges for both models.
+
 We can also check to see where our influential observations lie using the `check_outliers()` function combined with a plot of the observations. We've put the `results` variable in parentheses so that it runs automatically. 
 
 ```{r}
@@ -262,24 +297,7 @@ q1_data_tidied %>%
   filter(Response_Time > 3600)
 ```
 
-```{r}
-buildmer_test <- buildmer(Response_Time ~ Context +
-                            (1 + Context | Subject) +
-                            (1 + Context | Item),
-                          data = q1_data_tidied,
-                          family = Gamma,
-                          nAGQ = 0,
-                          buildmerControl = buildmerControl(direction = 'order',
-                                                            quiet = TRUE))
-formula(buildmer_test)
-```
-
-
-We have two response times that are far above 3600ms. We can approach this new information in a few different ways. We could choose to ignore the outliers, as they can be informative about the subject-area. Alternatively, we could remove the outliers from the dataset entirely. When deciding what approach to take, I refereed back to the George Box quote:
-
-`"All models are wrong, but some are useful."`
-
-Since there is no theoretically *correct* way to progress, I believe that the best approach is to build two models - one with and one without the outliers. If both results yield a similar narrative, then we can be confident that the effect exists regardless of the influential observations. Let's create a new dataset without the outliers.
+We have two response times that are far above 3600ms. We can approach this new information in a few different ways. We could choose to ignore the outliers, as they can be informative about the subject-area. Alternatively, we could remove the outliers from the dataset entirely. Since there is no theoretically *correct* way to progress, I believe that the best approach is to build two models - one with and one without the outliers. If both results yield a similar narrative, then we can be confident that the effect exists regardless of the influential observations. Let's create a new dataset without the outliers.
 
 ```{r}
 q1_data_removed <- q1_data_tidied %>% 
@@ -308,7 +326,19 @@ q1_MFM_removed <- lmer(Response_Time ~ 1 + Context +
 
 ## Interpreting our results
 
-Now that our two different models have been built, we can get the output of these models using the `summary()` function:  
+Now that we have all four of our models built, we can interpret the results using the `summary()` function
+
+**Model with normality assumptions**
+
+```{r}
+summary(q1_MFM_model)
+```
+
+**Model with Gamma assumptions**
+
+```{r}
+summary(q1_gamma_model_nAGQ0)
+```
 
 **Model with outliers**
 
@@ -322,13 +352,13 @@ summary(q1_MFM_model)
 summary(q1_MFM_removed)
 ```
 
-Our two models have given us very similar outputs. More of the random variability can be attributed to our subjects as oppose the the items. We are particularly interested in our fixed effects. Due to how we previously set up our contrasts, the `Intercept` corresponds to our `Neutral` contexts level. Crucially, in both models, `Negative` contexts differed significantly from `Neutral` contexts. Both models also told us that `Positive` contexts did not differ signficantly from `Neutral` contexts.
+All four of our models have given us similar outputs. More of the variability in our random effects can be attributed to our subjects as oppose the the items. We are particularly interested in our fixed effects. Due to how we previously set up our contrasts, the `Intercept` corresponds to our `Neutral` contexts level. Crucially, in all of our models, `Negative` contexts differed significantly from `Neutral` contexts. All of the models also told us that `Positive` contexts did not differ significantly from `Neutral` contexts.
 
 However, only part of the story has emerged so far. The problem with this kind of dummy coding is that there has not yet been a comparison of `Positive` contexts against `Negative` contexts. 
 
 ### Likelihood Ratio Test
 
-Let's now compare our experimental model to a model which has dropped the fixed effect of context. First, we need to build this latter model, which we'll call our null model. We'll use the likelihood ratio test (LRT) to assess whether the models are statistically different from each other. It is worth noting that models can only be compared to each other if they are nested - it is essential that our null model is a subset of our full factorial model, and contains the same random effects. This means that we are unable to use the LRT to assess the differences between our model without the outliers to our null model, since they were fitted to a different dataset. This shouldn't be too much of an issue considering that our two models told very much the same story. 
+Let's now compare our experimental model to a model which has dropped the fixed effect of context. First, we need to build this latter model, which we'll call our null model. We'll use the likelihood ratio test (LRT) to assess whether the models are statistically different from each other. It is worth noting that models can only be compared to each other if they are nested - it is essential that our null model is a subset of our full factorial model, and contains the same random effects. This means that we are unable to use the LRT to assess the differences between either our Gamma model or the model without the outliers to our null model, since they were fitted to a different dataset. This shouldn't be too much of an issue considering that all of our models told very much the same story. 
 
 ```{r}
 q1_model_null <- lmer(Response_Time ~ 
@@ -540,15 +570,13 @@ We can use the `check_model()` function to check the assumptions of our model.
 check_model(q2_maximal_model)
 ```
 
-Our model looks pretty good aside from the assessment of normality of residuals, where they seem to drop off at around 1.5 Standard Normal Distribution Quantiles. The 'tail' of our distribution seems to be causing problems. 
-
-We can use the package `{fitdistrplus}` to further investigate the data distribution. The function `descdist()` computes descriptive parameters of our distribution and provides a kewness-kurtosis plot on a Cullen and Frey graph.  
+Similar to question one, we seem to have problems with the normality of Residuals. We can use the  `descdist()` function to have a look at how our data are distributed. 
 
 ```{r}
 descdist(q2_data_tidied$RT)
 ```
 
-We have lots of different types of data distributions plotted on the Cullen and Frey graph, with our observed data indicated by the blue circle. It appears as though our dataset is quite far away from the theoretical normal distribution is, and is within the Gamma distribution. We can visualise the distribution using a histogram with density along the y-axis, and overlay the plot with a translucent density plot.
+Our reaction time data doesn't seem to follow the normal distribution. Let's visualise the distribution using a histogram with density along the y-axis, and overlay the plot with a translucent density plot.
 
 ```{r, out.width="200%"}
 q2_data_tidied  %>% 
@@ -570,31 +598,27 @@ q2_data_tidied  %>%
         text = element_text(family = "lato", size = 25))
 ```
 
-It looks as though we have a skewed normal distribution, which is typical of reaction time data. There is a point below which we don't have many reaction time measures because of physiological constraints. We also have a number of observations of people who have slower reaction times, which produces the gradual gradient of the tail. 
-
-Our next step is to build a model and specify that that our data are of Gamma distribution. We can build this using the `glmer()` function, ensuring that we specify that `family = Gamma`. Gamma mixed models are often much harder to fit, so the random effect structure needs to be much more simplified. Like earlier, we can build the maximal feasible model using the `buildmer()` function.
+Unsurprisingly, our reaction time data seems to be better represented by the Gamma distribution. Our next step is to build a factorial mixed model specify that that our data are of Gamma distribution. Like earlier, we can build the maximal feasible model using the `buildmer()` function.
 
 ```{r}
-gamma_buildmer_model <- buildmer(RT ~ StoryEmotion * FaceExpression +
+q2_gamma_buildmer_model <- buildmer(RT ~ StoryEmotion * FaceExpression +
                            (1 + StoryEmotion * FaceExpression | Subject) +
                            (1 + StoryEmotion * FaceExpression | Vignette),
                          family = Gamma,
                          data = q2_data_tidied,
                         buildmerControl = buildmerControl(direction = 'order',
                                                           quiet = TRUE))
-formula(gamma_buildmer_model)
+formula(q2_gamma_buildmer_model)
 ```
 
-This is problematic - the model `buildmer()` has chosen as the maximal feasible formula is too simplistic:
+Like before, the model `buildmer()` has chosen as the maximal feasible formula is too simplistic:
 
-`RT ~ 1 + FaceExpression + StoryEmotion + StoryEmotion:FaceExpression`.
+`RT ~ 1 + FaceExpression * StoryEmotion`.
 
-The maximal model that is actually capable of converging excludes our random slopes. To increase the parameters in our model, we'll need to modify the integer scalar within the `nAGQ` argument. Setting `nAGQ = 0` is less accurate that having it at its default `nAGQ = 1`, but it results in a higher chance of successful convergence [(Source: Stack Exchange)](https://stats.stackexchange.com/questions/544937/when-is-it-appropriate-to-set-nagq-0-in-glmer). 
-
-Let's build a new model with `nAGQ = 0`.
+The maximal model that is actually capable of converging excludes our random slopes. Let's set `nAGQ = 0` and try again.
 
 ```{r}
-gamma_model_nAGQ0 <- buildmer(RT ~ StoryEmotion * FaceExpression +
+q2_gamma_model_nAGQ0 <- buildmer(RT ~ StoryEmotion * FaceExpression +
                            (1 + StoryEmotion * FaceExpression | Subject) +
                            (1 + StoryEmotion * FaceExpression | Vignette),
                         family = Gamma,
@@ -602,15 +626,10 @@ gamma_model_nAGQ0 <- buildmer(RT ~ StoryEmotion * FaceExpression +
                         data = q2_data_tidied,
                         buildmerControl = buildmerControl(direction = 'order',
                                                           quiet = TRUE))
-formula(gamma_model_nAGQ0)
+formula(q2_gamma_model_nAGQ0)
 ```
 
-```{r}
-formula(gamma_model_nAGQ0)
-```
-
-
-This MFM is much more inclusive of our parameters. Let's compare our factorial model with normality assumptions against our new gamma model:
+This MFM is much more inclusive of our parameters. Let's compare our factorial model with normality assumptions against our new gamma model.
 
 ```{r}
 summary(q2_maximal_model)
