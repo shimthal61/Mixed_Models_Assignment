@@ -132,9 +132,13 @@ q1_data_tidied %>%
 
 <p>&nbsp;</p>
 
-Looking at our graph, it appears that participants did indeed respond quicker to items in `Negative` Contexts. It also looks items presented in `Positive` contexts elicited slower responses, with `Neutral` contexts sitting in between the two. We can now build our linear mixed model to see whether the levels in our condition are statistically different from each other. 
+Looking at our graph, it appears that participants did indeed respond quicker to items in `Negative` Contexts. It also looks items presented in `Positive` contexts elicited slower responses, with `Neutral` contexts sitting in between the two. Interestingly, we can see from the long tails in the `Positive` and `Negative` contexts that we have a couple of observations that had significantly slower response times- we'll come back to this later. This is an example of why it's important to always visualise data in combination with summary statistics.
 
-## Setting up our contrasts
+We can now build our linear mixed model to see whether the levels in our condition are statistically different from each other. 
+
+## Building our Linear Mixed-Model
+
+### Setting up our contrasts
 
 Since we're using dummy (treatment) coding for the levels our of experimental factor, let's have a look at how our contrasts have been coded using the `contrasts()` function.
 
@@ -153,7 +157,7 @@ contrasts(q1_data_tidied$Context)
 
 OK, this is what we want - `Neutral` contexts are coded as `0, 0`. Let's now build our mixed model.
 
-## Building our Linear Mixed-Model
+### Creating our Maximal Model
 
 Let's first create our maximal model using the `lmer()` function. We're asking for `Response_Time` to be predicted by fixed effect, `Context`, plus the random effect of `Item`, plus the random effect of `Subject`. This means that we're modelling an individual baseline response time for each of our items and random effects. Within our random effects, our model takes into consideration that the difference between the three levels of our experimental factor might vary between subjects and items. Finally, we're passing this all on to a variable called `q1_model_max`.
 
@@ -371,6 +375,8 @@ At face value, it looks like participants were quickest at identifying the facia
 
 ## Data Visualisation
 
+In this visualisation, I have plotted our `StoryEmotion` condition along the y-axis and labelled them accordingly using the `scale_x_discrete()` function. I have also used the legend and an appropriate colour scheme to indicate which data represent our `FaceExpression` condition.  
+
 ```{r, out.width="200%"}
 q2_data_tidied %>% 
   ggplot(aes(x = StoryEmotion:FaceExpression, y = RT, colour = FaceExpression)) +
@@ -396,7 +402,7 @@ q2_data_tidied %>%
 
 <p>&nbsp;</p>
 
-We can also build an interaction plot to get an idea of any interactions that may be present. First, we'll bring the legend closer to the lines by creating a new dataset that includes the y-values of the points where both lines end. We also need the labels that will be at the end of the lines. For this we use the function `case_when()`.
+We can also build an interaction plot to get an idea of any interactions that may be present. First, we'll bring the legend closer to the lines by creating a new dataset that includes the y-values of the points where both lines end. We also need the labels that will be at the end of the lines. For this we use the function `case_when()`. We can also use the `\n` expression to dictate that we want the word 'Expressions` to be on a new line.
 
 ```{r}
 labels <- q2_descriptives %>% 
@@ -406,17 +412,9 @@ labels <- q2_descriptives %>%
 head(labels)
 ```
 
-Using the `descriptive_stats` dataset we created earlier, we can add the geom_text to our interaction plot and pass our dataset `labels` to the geom. Among the aesthetics, `geom_text()` includes the aesthetic label, which stands for the text we will add to the visualization. We've also scaled down the y-axis using the `scale_y_continuous()` function to visually increase the distance between the means, aiding interpretation.
+Using the `descriptive_stats` dataset we created earlier, we can add the geom_text to our interaction plot and pass our dataset `labels` to the geom. Among the aesthetics, `geom_text()` includes the aesthetic label, which stands for the text we will add to the visualization. We've also scaled down the y-axis using the `scale_y_continuous()` function to visually increase the distance between the means, aiding interpretation. From the package `{ggtheme}`, we've added `theme_hc` to our plot. This removes the panel grid from our x-axis, as it doesn't add anything to our graph.  
 
-```{r}
-q2_descriptives <- q2_data_tidied %>% 
-  group_by(StoryEmotion, FaceExpression) %>% 
-  summarise(mean = mean(RT), sd = sd(RT)) %>% 
-  arrange(mean)
-head(q2_descriptives)
-```
-
-```{r}
+```{r, out.width="200%"}
 q2_descriptives %>% 
   ggplot(aes(x = StoryEmotion, y = mean)) +
   geom_line(aes(linetype = FaceExpression, group = FaceExpression, colour = FaceExpression), 
@@ -425,9 +423,9 @@ q2_descriptives %>%
   geom_text(size = 8, aes(label = label,
                           colour = FaceExpression),
             data = labels,
-            nudge_x = 0.17,
-            nudge_y = 70,
-            lineheight = 1) +
+            nudge_x = 0.19,
+            nudge_y = 75,
+            lineheight = 0.5) +
   guides(colour = 'none') +
   scale_y_continuous(breaks = seq(1800, 2800, by = 200),
                      limits = c(1800, 2800)) +
@@ -444,15 +442,15 @@ q2_descriptives %>%
 
 <p>&nbsp;</p>
 
-We can see here that we have a crossover interaction as the polarity of the difference flips. The graph shows that Reaction Time was faster for Angry Face Expressions when the preceding story was also angry. Likewise, Reaction Time was faster for Fearful Face Expressions when the preceding story was also Fearful. Due to our crossover interaction, it is unlikely that we'll have significant main effects of *both* Story Emotion and Face Expression variables, but a significant interaction effect is likely.
+We can see here that we have a crossover interaction as the polarity of the difference flips. The graph shows that Reaction Time was faster for Angry Face Expressions when the preceding story was also angry. Likewise, Reaction Time was faster for Fearful Face Expressions when the preceding story was also Fearful. Due to our crossover interaction, it is unlikely that we'll have significant main effects of *both* `StoryEmotion` and `FaceExpression` variables, but a significant interaction effect is likely.
 
 ## Building our Mixed-Model
 
 ### Setting up our Contrasts
 
-*R* assigns Treatment Contrasts to factors and orders their levels alphabetically. This default mapping will only be correct for a given data=set if the levels' alphabetical ordering matches our desired contrast coding. We're going to use sum contrast coding, where we want to end up with a mixed-model with the intercept equal to the grand mean of our experimental conditions. This makes it much easier to estimate the parameters in our model, and also ensures that we're interpreting main effects instead of simple effects. 
+*R* assigns Treatment Contrasts to factors and orders their levels alphabetically. This default mapping will only be correct for a given dataset if the levels' alphabetical ordering matches our desired contrast coding. This is problematic for models with interactions, as it makes it harder for us to interpret our parameter estimates, and critically, can result in misinterpretation of main vs simple effects. Rather than using the treatment coding we get by default, we're going to use sum (sometimes referred to as deviation) contrast coding, where we want to end up with a mixed-model with the intercept equal to the grand mean of our experimental conditions. This makes it much easier to estimate the parameters in our model, and also ensures that we're interpreting main effects instead of simple effects. 
 
-When we're building models for factorial data in *R*, by default the factors are coded using dummy coding. This is problematic for models with interactions, as it makes it harder for us to interpret our parameter estimates, and critically, can result in misinterpretation of main vs simple effects. 
+In the code chunk below, we're setting up the contrasts separately for each of our experimental factors. We're specifying within the `matrix()` argument that we want the intercept to correspond to the average of our four experimental conditions. 
 
 ```{r}
 contrasts(q2_data_tidied$StoryEmotion) <- matrix(c(.5, -.5))
@@ -581,7 +579,7 @@ summary(gamma_model_nAGQ0)
 
 This is interesting - the Gamma model has a very different output from the other model. 
 
-### Interpreting the Interaction
+## Interpreting the Interaction
 
 We can run pairwise comparisons using the `emmeans()` function. We need to specify our model, what interaction we want to run the t-tests on, and whether we want to change the correction method. By default, `{emmeans}` uses the Tukey correction method, which will suffice for us since only a few of our comparisons are going to be theoretically meaningful. We can, therefore, carry out a Bonferroni adjustment manually by multiplying the calculated *p*-value by the number of theoretically meaningful comparisons.
 
