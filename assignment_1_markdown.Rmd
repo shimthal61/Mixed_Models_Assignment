@@ -16,6 +16,12 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Github
+
+Please follow the link below for the full repository for this assignment:
+
+
+
 # Overview
 
 For this assignment, we have been provided with two different datasets. Using the knowledge we have gained from the workshops combined with further reading and wider resources, I will:
@@ -56,7 +62,7 @@ showtext_auto()
 
 Let's read in our data and look over the information for question 1:
 
-> <font size = "3"> We have 24 participants in a repeated measures design where we are interested in the effect of context on response time. Our experimental factor (Context) has 3 levels (Neutral vs. Negative vs. Positive). The time it took for participants to respond, which was taken as a measure of reaction time in milliseconds, served as the dependent variable. There were 24 items, and each item appeared in each of the three contexts. </font>
+> <font size = "3"> We have 24 participants in a repeated measures design where we are interested in the effect of item context on response time. Our experimental factor (Context) has 3 levels (Neutral vs. Negative vs. Positive). The time it took for participants to respond, which was taken as a measure of reaction time in milliseconds, served as the dependent variable. There were 24 items, and each item appeared in each of the three contexts. </font>
 
 Let's read in our data using the `read_csv()` function - we've organised our files using a .Rproj type to ensure reproducibility. We can glimpse the first 6 rows of our data using the `head()` function:
 
@@ -328,7 +334,7 @@ q1_MFM_removed <- lmer(Response_Time ~ 1 + Context +
 
 ## Interpreting our results
 
-Now that we have all four of our models built, we can interpret the results using the `summary()` function
+Now that we have all three of our models built, we can interpret the results using the `summary()` function
 
 **Model with normality assumptions**
 
@@ -342,25 +348,19 @@ summary(q1_MFM_model)
 summary(q1_gamma_model_nAGQ0)
 ```
 
-**Model with outliers**
-
-```{r}
-summary(q1_MFM_model)
-```
-
 **Model without outliers**
 
 ```{r}
 summary(q1_MFM_removed)
 ```
 
-All four of our models have given us similar outputs. More of the variability in our random effects can be attributed to our subjects as oppose the the items. We are particularly interested in our fixed effects. Due to how we previously set up our contrasts, the `Intercept` corresponds to our `Neutral` contexts level. Crucially, in all of our models, `Negative` contexts differed significantly from `Neutral` contexts. All of the models also told us that `Positive` contexts did not differ significantly from `Neutral` contexts.
+All three of our models have given us similar outputs. More of the variability in our random effects can be attributed to our subjects as oppose the the items. We are particularly interested in our fixed effects. Due to how we previously set up our contrasts, the `Intercept` corresponds to our `Neutral` contexts level. Crucially, in all of our models, `Negative` contexts differed significantly from `Neutral` contexts. All of the models also told us that `Positive` contexts did not differ significantly from `Neutral` contexts. Since all of the models have given us similar outputs, I have decided to continue using the unmodified model, as I feel this is more in line with ethical statistical reporting. 
 
 However, only part of the story has emerged so far. The problem with this kind of dummy coding is that there has not yet been a comparison of `Positive` contexts against `Negative` contexts. 
 
 ### Likelihood Ratio Test
 
-Let's now compare our experimental model to a model which has dropped the fixed effect of context. First, we need to build this latter model, which we'll call our null model. We'll use the likelihood ratio test (LRT) to assess whether the models are statistically different from each other. It is worth noting that models can only be compared to each other if they are nested - it is essential that our null model is a subset of our full factorial model, and contains the same random effects. This means that we are unable to use the LRT to assess the differences between either our Gamma model or the model without the outliers to our null model, since they were fitted to a different dataset. This shouldn't be too much of an issue considering that all of our models told very much the same story. 
+Let's now compare our experimental model to a model which has dropped the fixed effect of context. First, we need to build this latter model, which we'll call our null model. We'll use the likelihood ratio test (LRT) to assess whether the models are statistically different from each other. It is worth noting that models can only be compared to each other if they are nested - it is essential that our null model is a subset of our full factorial model, and contains the same random effects.
 
 ```{r}
 q1_model_null <- lmer(Response_Time ~ 
@@ -389,9 +389,11 @@ In this output, we get the estimates for our three experimental conditions, as w
 
 ## Writing up Results
 
-Post hoc comparisons applying Tukey correction confirmed that words appearing in Negative contexts resulted in significantly faster response times than words appearing in Positive contexts (*p* = .002), but not Neutral contexts (*p* = .264). The difference in response times given for words in Neutral contexts and Positive Contexts was not statistically significant (*p* = .089).
+We built a mixed model to investigate the influence of Item Context (Neutral vs. Negative vs. Positive) on Reaction Time. After finding that our model violated normality assumptions, we build 2 new models. One of them modeled our data using the Gamma distribution, the other modeled our data which excluded the outliers. All three of our models revealed the same significant effects. As such, we decided to continue with our original model.
 
-The results were carried out using the buildmer package (Voeten, 2022), which uses the lme4 package (Bates, Maechler, Bolker, Walker, 2015), to fit the linear mixed models for the response time measure in R version 4.1.1 (R Development Core Team). Deviation coding was used for each of the two experimental factors (Barr et al., 2013). Pairwise comparisons conducted with the emmeans package (Lenth, 2021) were used to investigate the interaction for the response time measure. Below, we report regression coefficient estimates, 95% confidence intervals, and *p* values for the intercept and fixed effects. Degrees of freedom were approximated using the Kenward-Roger method. Restricted maximum likelihood estimation was used for the reporting of parameters. For pairwise comparisons, we report the *t*-values and *p*-values. 
+Post hoc comparisons applying Tukey correction confirmed that words appearing in Negative contexts resulted in significantly faster response times than words appearing in Positive contexts (*p* < .001), but not Neutral contexts (*p* = .089). The difference in response times given for words in Neutral contexts and Positive Contexts was not statistically significant (*p* = .264.
+
+The results were carried out using the buildmer package (Voeten, 2022), which uses the lme4 package (Bates, Maechler, Bolker, Walker, 2015), to fit the linear mixed models for the response time measure in R version 4.1.1 (R Development Core Team). Normality assumptions were assessed using the performance package (Lüdecke et al., 2021). Deviation coding was used for each of the two experimental factors (Barr et al., 2013). Pairwise comparisons conducted with the emmeans package (Lenth, 2021) were used to investigate the interaction for the response time measure. Below, we report regression coefficient estimates, 95% confidence intervals, and *p* values for the intercept and fixed effects. Degrees of freedom were approximated using the Kenward-Roger method. Restricted maximum likelihood estimation was used for the reporting of parameters. For pairwise comparisons, we report the *t*-values and *p*-values. 
 
 ```{r, echo=FALSE}
 tab_model(q1_MFM_model, show.df = TRUE)
@@ -667,7 +669,7 @@ summary(q2_maximal_model)
 This is as we predicted earlier when examining our interaction plot. We have no significant main effects of `StoryEmotion` or `FaceExpression`, but we do have a significant interaction between the two variables. How about in our `gamma_model_nAGQ0`?
 
 ```{r}
-summary(gamma_model_nAGQ0)
+summary(q2_gamma_model_nAGQ0)
 ```
 
 This is interesting - the Gamma model has a very different output from the other model, with our *p*-values equal to or near 1. I suspect something major has been violated in the gamma model when nAQG is set to 0, perhaps due to the dataset not being as large as it could have been. A number of small issues have most likely combined together and led to an issue that affects the model parameter estimation. In this context, is it worth referring back to the George Box Quote:
@@ -692,16 +694,12 @@ Our two meaningful comparisons are the first and last ones produced in our outpu
 
 ## Writing Up Results
 
-We built a 2 (Story Emotion: Anger vs. Fear) x 2 (Face Expression: Anger vs. Fear) Factorial Mixed Model to investigate the influence of Story Emotion on Reaction Time to Angry or Fearful Face Expressions. After finding that our model violated normality assumptions, we built a model which modeled our data using the Gamma distribution. This model revealed no main effect of Story Emotion (t(898)<0.01, *p*=1), and no main effect of Face Expression (t(898)<0.01, *p*=1). There was also no interaction found between Story Emotion and Face Expression (t(898)=<0.01, *p*=.998). We decided to investigate our model which had violated normality assumptions, as a means to further investigate the data. Our model revealed no main effect of Story Emotion (t(898)=0.53, *p*=.599), and no main effect of Face Expression (t(898)=0.9, *p*=0.375). However, an interaction between Story Emotion and Face Expression was found (t(898)=7.51, *p*<.001).
+We built a 2 (Story Emotion: Anger vs. Fear) x 2 (Face Expression: Anger vs. Fear) fully factorial mixed model to investigate the influence of Story Emotion on Reaction Time to Angry or Fearful Face Expressions. After finding that our model violated normality assumptions, we built a model which modeled our data using the Gamma distribution. This model revealed no main effect of Story Emotion (t(898)<0.01, *p*=1), and no main effect of Face Expression (t(898)<0.01, *p*=1). There was also no interaction found between Story Emotion and Face Expression (t(898)=<0.01, *p*=.998). We decided to investigate our model which had violated normality assumptions, as a means to further investigate the data. Our model revealed no main effect of Story Emotion (t(898)=0.53, *p*=.599), and no main effect of Face Expression (t(898)=0.9, *p*=0.375). However, an interaction between Story Emotion and Face Expression was found (t(898)=7.51, *p*<.001).
 
 The interaction was interpreted by conducting Bonferroni-corrected pairwise comparisons. These comparisons revealed that the interaction was driven by Angry Face Expressions being processed faster in Angry vs. Fearful Story Emotions (1,864 ms. vs. 2,612 ms., t(898) = 4.47, *p*<.001). Fearful Face Expressions were also processed faster in Angry vs. Feaful Story Emotions (2,677 ms. vs. 2,037 ms., t(898)=6.43, *p*<.001).
 
-The results were carried out using the buildmer package (Voeten, 2022), which uses the lme4 package (Bates, Maechler, Bolker, Walker, 2015), to fit the linear mixed models for the response time measure in R version 4.1.1 (R Development Core Team). Deviation coding was used for each of the two experimental factors (Barr et al., 2013). Pairwise comparisons conducted with the emmeans package (Lenth, 2021) were used to investigate the interaction for the response time measure. Below, we report regression coefficient estimates, 95% confidence intervals, and *p* values for the intercept and fixed effects. Degrees of freedom were approximated using the Kenward-Roger method. Restricted maximum likelihood estimation was used for the reporting of parameters. For pairwise comparisons, we report the *t*-values and *p*-values. 
+The results were carried out using the buildmer package (Voeten, 2022), which uses the lme4 package (Bates, Maechler, Bolker, Walker, 2015), to fit the linear mixed models for the response time measure in R version 4.1.1 (R Development Core Team). Normality assumptions were assessed using the performance package (Lüdecke et al., 2021). Deviation coding was used for each of the two experimental factors (Barr et al., 2013). Pairwise comparisons conducted with the emmeans package (Lenth, 2021) were used to investigate the interaction for the response time measure. Below, we report regression coefficient estimates, 95% confidence intervals, and *p* values for the intercept and fixed effects. Degrees of freedom were approximated using the Kenward-Roger method. Restricted maximum likelihood estimation was used for the reporting of parameters. For pairwise comparisons, we report the *t*-values and *p*-values. 
 
 ```{r, echo=FALSE}
 tab_model(q2_maximal_model, show.df = TRUE)
 ```
-
-# Github
-
-For the full repository
