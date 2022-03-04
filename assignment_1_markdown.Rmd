@@ -134,14 +134,33 @@ q1_data_tidied %>%
 
 Looking at our graph, it appears that participants did indeed respond quicker to items in `Negative` Contexts. It also looks items presented in `Positive` contexts elicited slower responses, with `Neutral` contexts sitting in between the two. We can now build our linear mixed model to see whether the levels in our condition are statistically different from each other. 
 
+## Setting up our contrasts
+
+Since we're using dummy (treatment) coding for the levels our of experimental factor, let's have a look at how our contrasts have been coded using the `contrasts()` function.
+
+```{r}
+contrasts(q1_data_tidied$Context)
+```
+
+As it stands, `Negative` contexts are currently our reference level. We want it so that `Neutral` contexts becomes our reference level. This means that when we build our model, the intercept will correspond to the mean of our `Neutral` group. Changing the structure will make it easier to interpret the model parameter estimates (although it is not entirely necessary to do this when we have only one independent variable). We can do this using the `fct_relevel` argument within the `mutate()` function.
+
+```{r}
+q1_data_tidied <- q1_data_tidied %>% 
+  mutate(Context = fct_relevel(Context,
+                               c("Neutral", "Negative", "Positive")))
+contrasts(q1_data_tidied$Context)
+```
+
+OK, this is what we want - `Neutral` contexts are coded as `0, 0`. Let's now build our mixed model.
+
 ## Building our Linear Mixed-Model
 
 Let's first create our maximal model using the `lmer()` function. We're asking for `Response_Time` to be predicted by fixed effect, `Context`, plus the random effect of `Item`, plus the random effect of `Subject`. This means that we're modelling an individual baseline response time for each of our items and random effects. Within our random effects, our model takes into consideration that the difference between the three levels of our experimental factor might vary between subjects and items. Finally, we're passing this all on to a variable called `q1_model_max`.
 
 ```{r}
 q1_model_max <- lmer(Response_Time ~ Context + 
-                    (1 + Context | Item) +
-                    (1 + Context | Subject),
+                    (1 + Context | Subject) +
+                    (1 + Context | Item),
                   q1_data_tidied)
 ```
 
@@ -155,8 +174,8 @@ We can use the `{buildmer}` package to remedy this dilemma. The package consists
 
 ```{r}
 q1_buildmer_model <- buildmer(Response_Time ~ Context + 
-                    (1 + Context | Item) +
-                    (1 + Context | Subject),
+                    (1 + Context | Subject) +
+                    (1 + Context | Item),
                   q1_data_tidied,
                   buildmerControl = buildmerControl(direction = 'order', quiet = TRUE))
 formula(q1_buildmer_model)
@@ -176,8 +195,8 @@ Before we continue, it is worth noting that the model that `buildmer` has fit is
 
 ```{r}
 q1_MFM_model <- lmer(Response_Time ~ Context + 
-                   (1 | Item) +
-                   (1 | Subject),
+                   (1 | Subject) +
+                   (1 | Item),
                   q1_data_tidied)
 ```
 
@@ -216,7 +235,7 @@ We have two response times that are far above 3600ms. We can approach this new i
 
 `"All models are wrong, but some are useful."`
 
-I believe that the best approach is to build two models - one with and one without the outliers. If both results yield a similar narrative, then we can be confident that the effect is independent of the influential observations. Let's create a new dataset without the outliers.
+Since there is no theoretically *correct* way to progress, I believe that the best approach is to build two models - one with and one without the outliers. If both results yield a similar narrative, then we can be confident that the effect exists regardless of the influential observations. Let's create a new dataset without the outliers.
 
 ```{r}
 q1_data_removed <- q1_data_tidied %>% 
@@ -243,6 +262,8 @@ q1_MFM_removed <- lmer(Response_Time ~ 1 + Context +
                        data = q1_data_removed)
 ```
 
+## Interpreting our results
+
 Now that our two different models have been built, we can get the output of these models using the `summary()` function:  
 
 **Model with outliers**
@@ -257,36 +278,13 @@ summary(q1_MFM_model)
 summary(q1_MFM_removed)
 ```
 
+Our two models have given us very similar outputs. More of the random variability can be attributed to our subjects as oppose the the items. We are particularly interested in our fixed effects. Due to how we previously set up our contrasts, the `Intercept` corresponds to our `Neutral` contexts level. Crucially, in both models, `Negative` contexts differed significantly from `Neutral` contexts. Both models also told us that `Positive` contexts did not differ signficantly from `Neutral` contexts.
 
-
-
-We can ask for the output of our model using the `summary()` function.
-
-```{r}
-summary(q1_model)
-```
-
-More of the random variability can be attributed to our subjects as oppose the the items. Critically, we are interested in our fixed effects. For our dummy coding, *R* using alphabetical information by default when choosing a reference level of our factor against which to compare the other levels of our factor.
-
-which compares the Intercept (our Negative Context condition) to first the Neutral Context condition, then to the Positive Context condition. The average response times to our Negative condition are 1086.50 ms, which lets us work out the average response times for the other two conditions:
-
-**Neutral Context condition mean:**
-
-```{r}
-sum(1086.5 + 98.23)
-```
-
-**Positive Context condition mean:**
-
-```{r}
-print(1086.5 + 170.8)
-```
-
-Our model currently has two comparisons - Negative vs Neutral, and Negative vs Positive conditions. However, one of the issues with using default dummy coding is that there is one comparison that has not yet been conducted - Neutral vs Positive. As it stands, only part of the story has emerged.
+However, only part of the story has emerged so far. The problem with this kind of dummy coding is that there has not yet been a comparison of `Positive` contexts against `Negative` contexts. 
 
 ### Likelihood Ratio Test
 
-Let's now compare our experimental model to a model which has dropped the fixed effect of context. First, we need to build this latter model, which we'll call our null model. We'll use the likelihood ratio test (LRT) to assess whether the models are statistically different from each other. It is worth noting that models can only be compared to each other if they are nested - it is essential that our null model is a subset of our full factorial model, and contains the same random effects.
+Let's now compare our experimental model to a model which has dropped the fixed effect of context. First, we need to build this latter model, which we'll call our null model. We'll use the likelihood ratio test (LRT) to assess whether the models are statistically different from each other. It is worth noting that models can only be compared to each other if they are nested - it is essential that our null model is a subset of our full factorial model, and contains the same random effects. This means that we are unable to use the LRT to assess the differences between our model without the outliers to our null model, since they were fitted to a different dataset. This shouldn't be too much of an issue considering that our two models told very much the same story. 
 
 ```{r}
 q1_model_null <- lmer(Response_Time ~ 
@@ -298,22 +296,22 @@ q1_model_null <- lmer(Response_Time ~
 We can them compare our two models with the LRT within the `anova()` function:
 
 ```{r, warning=FALSE, message=FALSE}
-anova(q1_model, q1_model_null)
+anova(q1_MFM_model, q1_model_null)
 ```
 
-If we have a look at our *p*-value, we can see that our two models differ significantly from each other (*p* \< .001. Moreover, by looking at our deviance scores, the residual sums of squares is less for our model with our fixed effects. This tells us that our experimental manipulation seems to be making a difference. Interestingly, the Akaike Information Criteron (AIC), which measures how much 'information' is not captured by our model, is lower in our factorial model (i.e. our fully factorial captures less information). However, it is also worth noting that absolute AIC values can only be interpreted relative to the ACI values from other models.
+If we have a look at our *p*-value, we can see that our two models differ significantly from each other (*p* < .001. Moreover, by looking at our deviance scores, the residual sums of squares is less for our model with our fixed effects. This tells us that our experimental manipulation seems to be making a difference. As expected, our AIC, BIC, and deviance scores are all lower in our model which contains our experimental factor. This all tells us that our experimental manipulation seems to be making a difference. 
+
+### Pairwise Comparisons
 
 Following this, we run to run pairwise comparisons where we control for the familywise error rate. We're going to use the `emmenas()` function from the `{emmeans}` package to run our multiple comparisons:
 
 ```{r}
-emmeans(q1_model, pairwise ~ Context)
+emmeans(q1_MFM_model, pairwise ~ Context)
 ```
 
-In this output, we get the estimates for our three experimental conditions, as well as our pairwise comparisons, which compares our condition with each other condition in all possible combinations. By default, the `{emmeans}` function uses the Tukey corrected comparisons method. If we correct for multiple comparisons, we see that only one pairwise comparison is significant - Negative vs Positive condition. The Neutral vs Positive conditions, which was significant in the model estimates earlier, is no longer significant when taking into account multiple comparisons.
+In this output, we get the estimates for our three experimental conditions, as well as our pairwise comparisons, which compares our condition with each other condition in all possible combinations. By default, the `{emmeans}` function uses the Tukey corrected comparisons method. If we correct for multiple comparisons, we see that only one pairwise comparison is significant - `Negative` vs `Positive` condition. The `Neutral` vs `Negative` conditions, which was significant in the model estimates earlier, is no longer significant when taking into account multiple comparisons.
 
 ## Conclusion
-
-In our model, where our experimental factor
 
 Post hoc comparisons applying Tukey correction confirmed that words appearing in Negative contexts resulted in significantly faster response times than words appearing in Positive contexts (*p* = .013, d = .), but not Neutral contexts (*p* = .145, d = ). The difference in response times given for words in Neutral contexts and Positive Contexts was not statistically significant (*p* = .312, d = ).
 
