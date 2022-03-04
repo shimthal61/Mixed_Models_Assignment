@@ -196,26 +196,69 @@ This is interesting - our model seems to have some deviation in its normality of
 check_normality(q1_MFM_model)
 ```
 
-With a *p* < .001, it is clear that we have skewed residuals. We can also check to see where our influential observations lie, using the `check_outliers()` function:
+With a *p* < .001, it is clear that we have skewed residuals. 
+
+We can also check to see where our influential observations lie using the `check_outliers()` function combined with a plot of the observations. We've put the `results` variable in parentheses so that it runs automatically. 
 
 ```{r}
-results <- check_outliers(q1_MFM_model)
+(results <- check_outliers(q1_MFM_model))
 plot(results, type = "bars")
 ```
 
-We are told that we have two outliers We can do a simple search for them using `filter()` to gather response times larger than 3600.
+We are told that we have two influential observations. We can do a simple search for them using `filter()` to gather response times larger than 3600. 
 
 ```{r}
 q1_data_tidied %>% 
   filter(Response_Time > 3600)
 ```
 
-With this new information, we could 
+We have two response times that are far above 3600ms. We can approach this new information in a few different ways. We could choose to ignore the outliers, as they can be informative about the subject-area. Alternatively, we could remove the outliers from the dataset entirely. When deciding what approach to take, I refereed back to the George Box quote:
 
-We could build a new model to  
+`"All models are wrong, but some are useful."`
+
+I believe that the best approach is to build two models - one with and one without the outliers. If both results yield a similar narrative, then we can be confident that the effect is independent of the influential observations. Let's create a new dataset without the outliers.
+
+```{r}
+q1_data_removed <- q1_data_tidied %>% 
+  filter(Response_Time < 3600)
+head(q1_data_removed)
+```
+
+We can now build our MFM using `buildmer()` and map the resulting formula onto a `lmer`.
+
+```{r}
+q1_removed_buildmer <- buildmer(Response_Time ~ Context +
+                                 (1 + Context | Subject) +
+                                 (1 + Context | Item),
+                               data = q1_data_removed,
+                               buildmerControl = buildmerControl(direction = 'order',
+                                                                 quiet = TRUE))
+formula(q1_removed_buildmer)
+```
+
+```{r}
+q1_MFM_removed <- lmer(Response_Time ~ 1 + Context +
+                         (1 | Subject) +
+                         (1 | Item),
+                       data = q1_data_removed)
+```
+
+Now that our two different models have been built, we can get the output of these models using the `summary()` function:  
+
+**Model with outliers**
+
+```{r}
+summary(q1_MFM_model)
+```
+
+**Model without outliers**
+
+```{r}
+summary(q1_MFM_removed)
+```
 
 
-Although our model seems to break down a little a its normality of residuals, the assumptions seem mostly to have been met. ("all models are wrong, but some are useful" - George Box).
+
 
 We can ask for the output of our model using the `summary()` function.
 
