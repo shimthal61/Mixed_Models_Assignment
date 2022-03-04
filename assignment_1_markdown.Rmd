@@ -309,13 +309,13 @@ Following this, we run to run pairwise comparisons where we control for the fami
 emmeans(q1_MFM_model, pairwise ~ Context)
 ```
 
-In this output, we get the estimates for our three experimental conditions, as well as our pairwise comparisons, which compares our condition with each other condition in all possible combinations. By default, the `{emmeans}` function uses the Tukey corrected comparisons method. If we correct for multiple comparisons, we see that only one pairwise comparison is significant - `Negative` vs `Positive` condition. The `Neutral` vs `Negative` conditions, which was significant in the model estimates earlier, is no longer significant when taking into account multiple comparisons.
+In this output, we get the estimates for our three experimental conditions, as well as our pairwise comparisons, which compares our condition with each other condition in all possible combinations. By default, the `{emmeans}` function uses the Tukey corrected comparisons method. If we correct for multiple comparisons, we see that the only pairwise comparison that was not carried out when using the `summary()` function is significant - `Negative` vs `Positive` conditions. The `Neutral` vs `Negative` conditions, which was significant in the model estimates earlier, is no longer significant when taking into account multiple comparisons.
 
 ## Conclusion
 
-Post hoc comparisons applying Tukey correction confirmed that words appearing in Negative contexts resulted in significantly faster response times than words appearing in Positive contexts (*p* = .013, d = .), but not Neutral contexts (*p* = .145, d = ). The difference in response times given for words in Neutral contexts and Positive Contexts was not statistically significant (*p* = .312, d = ).
+Post hoc comparisons applying Tukey correction confirmed that words appearing in Negative contexts resulted in significantly faster response times than words appearing in Positive contexts (*p* = .002), but not Neutral contexts (*p* = .264). The difference in response times given for words in Neutral contexts and Positive Contexts was not statistically significant (*p* = .089).
 
-By using a linear mixed models, we were able to model the individual variation due to participants and items, and build up a model which is able to take on board all of the information in our dataset. By working over the raw data points themselves, the linear mixed model approach uses a lot more information that is in the dataset. Finally, we can compare different models to each other using the Likelihood Ratio Test.
+By building linear mixed models, we were able to model the individual variation due to participants and items, and build up a model which was able to take on board all of the information in our dataset. By working over the raw data points themselves, the linear mixed model approach used a lot more information that is in the dataset.
 
 # Question 2
 
@@ -347,11 +347,17 @@ This is much better. We can use the `str()` function to explore our tibble in a 
 str(q2_data_tidied)
 ```
 
-We can see that `StoryEmotion` and `FaceExpression` have the two levels coded in.
+We can see that `StoryEmotion` and `FaceExpression` now have their two levels, `Anger` and `Fear`, coded in. Let's quickly check for missing data using the `vis_miss()` function.
+
+```{r}
+vis_miss(q2_data_tidied)
+```
+
+All our data is present. Let's move on to generating summary statistics
 
 ## Data Summarising
 
-Let's generate some descriptive statistics to get an idea of what's going on. We need to group by both of our independent variables using the `group_by()` function, then ask *R* to work out the mean and standard deviation of reaction time within the `summarise()` function. Like before, we can arrange the mean values in ascending order to see which group had the fastest reaction times. I've mapped the outcome onto a new variable for later use in an interaction plot.
+Let's generate some descriptive statistics to get an idea of what's going on. We need to group both of our independent variables using the `group_by()` function, then ask *R* to work out the mean and standard deviation of reaction time within the `summarise()` function. Like before, we can arrange the mean values in ascending order to see which group had the fastest reaction times. I've mapped the outcome onto a new variable for later use in an interaction plot.
 
 ```{r}
 q2_descriptives <- q2_data_tidied %>% 
@@ -361,11 +367,11 @@ q2_descriptives <- q2_data_tidied %>%
 head(q2_descriptives)
 ```
 
-Like the previous question, our output hasn't produced any NA results, so no need to use the `{visdat}` function to identify the location of missing data. At face value, it looks like participants were quickest at identifying the facial expressions when the story preceding it was consistent with the face emotion. Let's generate a visualisation to get a clearer idea.
+At face value, it looks like participants were quickest at identifying the facial expressions when the story emotion preceding it was consistent with the face emotion. Let's generate a visualisation to get a clearer idea.
 
 ## Data Visualisation
 
-```{r}
+```{r, out.width="200%"}
 q2_data_tidied %>% 
   ggplot(aes(x = StoryEmotion:FaceExpression, y = RT, colour = FaceExpression)) +
   geom_violin() +
