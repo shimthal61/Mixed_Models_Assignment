@@ -290,18 +290,19 @@ We can also check to see where our influential observations lie using the `check
 plot(results, type = "bars")
 ```
 
-We are told that we have two influential observations. We can do a simple search for them using `filter()` to gather response times larger than 3600. 
+We are told that we have two influential observations. We can `arrange()` the `Response_Time` so that the largest Response times appear at the top of our tibble.
 
 ```{r}
 q1_data_tidied %>% 
-  filter(Response_Time > 3600)
+  group_by(Response_Time) %>% 
+  arrange(-Response_Time)
 ```
 
-We have two response times that are far above 3600ms. We can approach this new information in a few different ways. We could choose to ignore the outliers, as they can be informative about the subject-area. Alternatively, we could remove the outliers from the dataset entirely. Since there is no theoretically *correct* way to progress, I believe that the best approach is to build two models - one with and one without the outliers. If both results yield a similar narrative, then we can be confident that the effect exists regardless of the influential observations. Let's create a new dataset without the outliers.
+We can see here that we have two response times - 5240ms and 4613ms that are well above the others. We can approach this new information in a few different ways. We could choose to include the outliers, as they can be informative about the subject-area. Alternatively, we could remove the outliers from the dataset entirely. Since there is no theoretically *correct* way to progress, I believe that the best approach is to build two models - one with and one without the outliers. If both results yield a similar narrative, then we can be confident that the effect exists regardless of the influential observations. Let's create a new dataset without the outliers.
 
 ```{r}
 q1_data_removed <- q1_data_tidied %>% 
-  filter(Response_Time < 3600)
+  filter(Response_Time < 4600)
 head(q1_data_removed)
 ```
 
@@ -570,7 +571,7 @@ We can use the `check_model()` function to check the assumptions of our model.
 check_model(q2_maximal_model)
 ```
 
-Similar to question one, we seem to have problems with the normality of Residuals. We can use the  `descdist()` function to have a look at how our data are distributed. 
+Similar to question one, we seem to have problems with the normality of Residuals and have a couple of outliers. We can use the  `descdist()` function to have a look at how our data are distributed. 
 
 ```{r}
 descdist(q2_data_tidied$RT)
@@ -598,7 +599,7 @@ q2_data_tidied  %>%
         text = element_text(family = "lato", size = 25))
 ```
 
-Unsurprisingly, our reaction time data seems to be better represented by the Gamma distribution. Our next step is to build a factorial mixed model specify that that our data are of Gamma distribution. Like earlier, we can build the maximal feasible model using the `buildmer()` function.
+Unsurprisingly, our reaction time data seems to be better represented by the Gamma distribution. The next step is to build a factorial mixed model, making sure we specify our data as having Gamma distribution. We can build the maximal feasible model using the `buildmer()` function.
 
 ```{r}
 q2_gamma_buildmer_model <- buildmer(RT ~ StoryEmotion * FaceExpression +
@@ -629,37 +630,54 @@ q2_gamma_model_nAGQ0 <- buildmer(RT ~ StoryEmotion * FaceExpression +
 formula(q2_gamma_model_nAGQ0)
 ```
 
-This MFM is much more inclusive of our parameters. Let's compare our factorial model with normality assumptions against our new gamma model.
+This MFM is much more inclusive of our parameters.
+
+Let's also check to see where our influential observations lie.
+
+```{r}
+(q2_results <- check_outliers(q2_maximal_model))
+plot(q2_results, type = "bars")
+```
+
+We are told that we have two influential observations. We can `arrange()` the `RT` so that the largest reaction times appear at the top of our tibble.
+
+```{r}
+q2_data_tidied %>% 
+  group_by(RT) %>% 
+  arrange(-RT)
+```
+
+It does not appear as though we have any particularly influential observations. In this case, it is sensible to leave our dataset as it is.
+
+## Interpreting the Interaction
+
+Let's compare our factorial model with normality assumptions against our new gamma model.
 
 ```{r}
 summary(q2_maximal_model)
 ```
 
-This is as we predicted earlier in our interaction plot. We have no significant main effects of `StoryEmotion` of `FaceExpression`, but we do have a significant interaction between the two variables. How about in our `gamma_model_nAGQ0`?
+This is as we predicted earlier when examining our interaction plot. We have no significant main effects of `StoryEmotion` or `FaceExpression`, but we do have a significant interaction between the two variables. How about in our `gamma_model_nAGQ0`?
 
 ```{r}
 summary(gamma_model_nAGQ0)
 ```
 
-This is interesting - the Gamma model has a very different output from the other model. 
+This is interesting - the Gamma model has a very different output from the other model, with our *p*-values equal to or near 1. I suspect something major has been violated in the gamma model when nAQG is set to 0, perhaps due to the dataset not being as large as it could have been. A number of small issues have most likely combined together and led to an issue that affects the model parameter estimation. In this context, is it worth referring back to the George Box Quote:
 
-## Interpreting the Interaction
+"All models are wrong, but some are useful."
 
-We can run pairwise comparisons using the `emmeans()` function. We need to specify our model, what interaction we want to run the t-tests on, and whether we want to change the correction method. By default, `{emmeans}` uses the Tukey correction method, which will suffice for us since only a few of our comparisons are going to be theoretically meaningful. We can, therefore, carry out a Bonferroni adjustment manually by multiplying the calculated *p*-value by the number of theoretically meaningful comparisons.
+Although our Gamma model takes into account the normality violations, we are left with a model which tells us very little about the data. I believe it makes more sense to use our initial model. Although it violates the normality assumptions to a degree, we are able to generate a much more in depth analysis of our dataset. Moreover, since our Gamma model produced an insignificant interaction, there is no need to perform pairwise comparisons on the model
 
-The `emmeans()` function can't handle our `gamma_model` as it is currently of class `buildmer()`. Let's quickly pass on the MFM that `buildmer()` identified to a `glmer()`.
-
-```{r}
-gamma_model_glmer <- glmer(RT ~ 1 + FaceExpression * StoryEmotion + 
-        (1 + FaceExpression + StoryEmotion | Subject) + 
-        (1 + StoryEmotion * FaceExpression | Vignette),
-      data = q2_data_tidied,
-      family = Gamma,
-      nAGQ = 0)
-```
-
+Let's now generate some pairwise comparisons with this factorial model to see what's driving the effects. We need to specify our model, what interaction we want to run the t-tests on, and whether we want to change the correction method. By default, `{emmeans}` uses the Tukey correction method, which will suffice for us since only a few of our comparisons are going to be theoretically meaningful. We can, therefore, carry out a Bonferroni adjustment manually by multiplying the calculated *p*-value by the number of theoretically meaningful comparisons. 
 
 ```{r}
-emmeans(gamma_model_glmer, pairwise ~ StoryEmotion*FaceExpression, adjust = "none")
+emmeans(q2_maximal_model, pairwise ~ StoryEmotion*FaceExpression, adjust = "none")
 ```
+
+There are only two theoretically sensible comparisons to make:
+
+`Angry FaceExpression` with `Angry StoryEmotion` vs `Angry FaceExpression` with `Fear StoryEmotion`
+
+`Fear FaceExpression` with `Fear StoryEmotion` vs `Fear FaceExpression` with `Angry StoryEmotion`
 
