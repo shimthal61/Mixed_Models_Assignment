@@ -145,3 +145,23 @@ q2_descriptives %>%
         axis.title.y = element_text(size = 30, margin = margin(r = 20)),
         text = element_text(family = "lato", size = 25))
 ```
+
+```{r, out.width="200%"}
+q2_data_tidied  %>% 
+  ggplot(aes(x = RT)) +
+  geom_histogram(aes(y =..density..),
+                 binwidth = 100,
+                 colour = "black", fill = "black",
+                 alpha = 0.5) +
+  geom_density(alpha = .5, fill = "#FF6666") +
+  theme_minimal() +
+  labs(x = "Reaction Time (ms. )",
+       y = "Density",
+       title = "Histogram and Density Plot of Reaction Time",
+       subtitle = "Our data seems to be more closely\naligned with the Gamma distribution") +
+  theme(plot.title = element_text(size = 40, hjust = 0.5, margin = margin(b = 10), line = 0.5, face = "bold"),
+        axis.title.x = element_text(size = 30, margin = margin(t = 20)),
+        axis.title.y = element_text(size = 30, margin = margin(r = 20)),
+        plot.subtitle = element_text(line = 0.5, hjust = 0.06, margin = margin(b = 10)),
+        text = element_text(family = "lato", size = 25))
+```

@@ -204,7 +204,6 @@ q1_MFM_model <- lmer(Response_Time ~ Context +
                   q1_data_tidied)
 ```
 
-
 ### Checking Normality Assumptions
 
 Before we move on, we should check to see whether our model adheres to normality assumptions. To do this, we can use the `check_model()` function found within the `{performance}` package. This will output a number of diagnostic plots and allow us to quickly tell whether our mixed model seems to be consistent with the assumptions behind mixed models.
@@ -219,7 +218,35 @@ This is interesting - our model seems to have some deviation in its normality of
 check_normality(q1_MFM_model)
 ```
 
-With a *p* < .001, it is clear that we have skewed residuals. 
+With a *p* < .001, it is clear that we have skewed residuals. We can use the package `{fitdistrplus}` to further investigate the data distribution. The function `descdist()` computes descriptive parameters of our distribution and provides a kewness-kurtosis plot on a Cullen and Frey graph.
+
+```{r}
+descdist(q1_data_tidied$Response_Time)
+```
+
+We have lots of different types of data distributions plotted on the Cullen and Frey graph, with our observed data indicated by the blue circle. It appears as though our dataset is quite far away from the theoretical normal distribution. We can visualise the distribution using a histogram with density along the y-axis, and overlay the plot with a translucent density plot.
+
+```{r, out.width="200%"}
+q1_data_tidied  %>% 
+  ggplot(aes(x = Response_Time)) +
+  geom_histogram(aes(y =..density..),
+                 binwidth = 100,
+                 colour = "black", fill = "black",
+                 alpha = 0.5) +
+  geom_density(alpha = .5, fill = "#FF6666") +
+  theme_minimal() +
+  labs(x = "Response Time (ms. )",
+       y = "Density",
+       title = "Histogram and Density Plot of Response Time",
+       subtitle = "Our data seems to be more closely\naligned with the Gamma distribution") +
+  theme(plot.title = element_text(size = 40, hjust = 0.5, margin = margin(b = 10), line = 0.5, face = "bold"),
+        axis.title.x = element_text(size = 30, margin = margin(t = 20)),
+        axis.title.y = element_text(size = 30, margin = margin(r = 20)),
+        plot.subtitle = element_text(line = 0.5, hjust = 0.06, margin = margin(b = 10)),
+        text = element_text(family = "lato", size = 25))
+```
+
+It looks as though we have something similar to the Gamma distribution, which is typical of reaction time data. There is a point below which we don't have many reaction time measures because of physiological constraints. We also have a number of observations of people who have slower reaction times, which produces the gradual gradient of the tail. 
 
 We can also check to see where our influential observations lie using the `check_outliers()` function combined with a plot of the observations. We've put the `results` variable in parentheses so that it runs automatically. 
 
@@ -234,6 +261,19 @@ We are told that we have two influential observations. We can do a simple search
 q1_data_tidied %>% 
   filter(Response_Time > 3600)
 ```
+
+```{r}
+buildmer_test <- buildmer(Response_Time ~ Context +
+                            (1 + Context | Subject) +
+                            (1 + Context | Item),
+                          data = q1_data_tidied,
+                          family = Gamma,
+                          nAGQ = 0,
+                          buildmerControl = buildmerControl(direction = 'order',
+                                                            quiet = TRUE))
+formula(buildmer_test)
+```
+
 
 We have two response times that are far above 3600ms. We can approach this new information in a few different ways. We could choose to ignore the outliers, as they can be informative about the subject-area. Alternatively, we could remove the outliers from the dataset entirely. When deciding what approach to take, I refereed back to the George Box quote:
 
@@ -457,9 +497,9 @@ contrasts(q2_data_tidied$StoryEmotion) <- matrix(c(.5, -.5))
 contrasts(q2_data_tidied$FaceExpression) <- matrix(c(.5, -.5))
 ```
 
-### Building our Maximal Model
+### Building our Maximal Feasible Model
 
-Let's first create a maximal model where we attempt to model the most complex random effects structure - `StoryEmotion + FaceExpression * StoryEmotion : FaceExpression.` We're attempting to model our random effects such that the main effects *and* interaction effects differ for each of our participants and each vignettes. 
+Let's first create a maximal model where we attempt to model the most complex random effects structure. We're attempting to model our random effects such that the main effects *and* interaction effects differ for each of our participants and each vignettes. 
 
 ```{r}
 q2_maximal_model <- lmer(RT ~ StoryEmotion * FaceExpression +
@@ -468,32 +508,29 @@ q2_maximal_model <- lmer(RT ~ StoryEmotion * FaceExpression +
                  data = q2_data_tidied)
 ```
 
-When we try to build our maximal model, we receive a warning message telling us that it was unable to converge on a solution of a model that fits our dataset. In other words, our model is too complicated in relation to our data-set. To remedy this issue, we would normally need to simplify our random effect structure until we reach a model which fits our data-set with the appropriate parameters. This would mean continually building models in a backwards direction until we found a model which didn't spit out the `Model failed to converge...` warning message. As well as being time-consuming, this method is not guaranteed to produce the MFM.  
-
-We can use the `{buildmer}` package to remedy this dilemma. The package consists of a number of functions designed to fit specific types of models. By using the `lmer()` function from `{lme4}`, the  `buildmer()` function fits our mixed-effect model to find the MFM. The good thing about this package is that it uses the exact syntax as building a model in `{lme4}`, where the formula we first input is the maximal model we can possible build. Within the `buildmerControl()` argument, we set the `direction` parameter to `'order'`. This means that `buildmer()` will start out with an empty model and keep adding terms to it until convergence can no longer be achieved. `buildmer()` adds terms in order of their contribution to a certain criterion, including that the most important random slopes be included *first*. 
+When we try to build our maximal model, we receive a warning message telling us that it was unable to converge on a solution of a model that fits our dataset. In other words, our model is too complicated in relation to our data-set. Like in the previous question, we can use the infinitely useful package `{buildmer}` to find out MFM for us. Let's paste our maximal formula into the `buildmer()` function. Again, we need to specify that we want our model built from the ground up using the `direction = 'order'` argument. We've also hidden the fitting process using `quiet = TRUE`.
 
 ```{r, message=FALSE}
-q2_maximal_model <- buildmer(RT ~ StoryEmotion * FaceExpression +
+q2_buildmer_model <- buildmer(RT ~ StoryEmotion * FaceExpression +
                           (1 + StoryEmotion * FaceExpression | Subject) +
                           (1 + StoryEmotion * FaceExpression | Vignette),
                         data = q2_data_tidied,
                         buildmerControl = buildmerControl(direction = 'order', quiet = TRUE))
-formula(q2_maximal_model)
+formula(q2_buildmer_model)
 ```
 
-The maximal feasible model (MFM) has been developed for us, which has been specified in the `formula` part of our output:
+The maximal feasible model (MFM) has been developed for us, which has been specified in the `formula` part of our output. In shorthand it translates to this:
 
-`RT ~ 1 + FaceExpression + StoryEmotion + FaceExpression:StoryEmotion + (1 + FaceExpression | Subject) + (1 + FaceExpression | Vignette)`
+`RT ~ 1 + FaceExpression * StoryEmotion + (1 + FaceExpression | Subject) + (1 + FaceExpression | Vignette)`
 
-Our model contains the fixed main effects of `StoryEmotion` *plus* the main effect `FaceExpression` *plus* the interaction between the two factors. For our random effects, we have modeled the main effect of `StoryEmotion` to differ for each of our subjects, and to differ for each of our Vignettes.
+Our model contains the fixed main effects of `StoryEmotion` *plus* the main effect `FaceExpression` *plus* the interaction between the two factors. For our random effects, we have modeled the main effect of `StoryEmotion` to differ for each of our subjects, and to differ for each of our Vignettes. 
 
-Due to `buildmer()` defining our model as being of a `buildmer` class, it is currently incompatible with future functions, meaning that we currently cannot assess assumptions or investigate interactions. We do, however, know that the formula is for our model, and can map this onto a model of `lmer()` class:
+To be able to use our model later, we need to convert it to `lmer` class instead of `buildmer` class. We already know the formula, so let's paste it to `lmer()`. 
 
 ```{r}
 q2_maximal_model <- lmer(RT ~ 1 + FaceExpression + StoryEmotion + FaceExpression:StoryEmotion + (1 + FaceExpression | Subject) + (1 + FaceExpression | Vignette),
                           data = q2_data_tidied)
 ```
-
 
 ### Checking Normality Assumptions
 
@@ -513,36 +550,39 @@ descdist(q2_data_tidied$RT)
 
 We have lots of different types of data distributions plotted on the Cullen and Frey graph, with our observed data indicated by the blue circle. It appears as though our dataset is quite far away from the theoretical normal distribution is, and is within the Gamma distribution. We can visualise the distribution using a histogram with density along the y-axis, and overlay the plot with a translucent density plot.
 
-```{r}
+```{r, out.width="200%"}
 q2_data_tidied  %>% 
   ggplot(aes(x = RT)) +
   geom_histogram(aes(y =..density..),
                  binwidth = 100,
                  colour = "black", fill = "black",
-                 alpha = 0.8) +
+                 alpha = 0.5) +
   geom_density(alpha = .5, fill = "#FF6666") +
   theme_minimal() +
   labs(x = "Reaction Time (ms. )",
        y = "Density",
-       title = "Density Plot Visualising out Beta Distribution") +
-  theme(plot.title = element_text(size = 40, hjust = 0.5, margin = margin(b = 25), line = 0.5, face = "bold"),
+       title = "Histogram and Density Plot of Reaction Time",
+       subtitle = "Our data seems to be more closely\naligned with the Gamma distribution") +
+  theme(plot.title = element_text(size = 40, hjust = 0.5, margin = margin(b = 10), line = 0.5, face = "bold"),
         axis.title.x = element_text(size = 30, margin = margin(t = 20)),
         axis.title.y = element_text(size = 30, margin = margin(r = 20)),
+        plot.subtitle = element_text(line = 0.5, hjust = 0.06, margin = margin(b = 10)),
         text = element_text(family = "lato", size = 25))
 ```
 
-It looks as though we have a skewed normal distribution, which is typical of reaction time data. There is a point below which we don't have many reaction time measures because of physiological constraints. There is a cluster of points at around 1250ms. Finally, we have a number of trails on people who have slower reaction times, which produces the gradual gradient of the tail. 
+It looks as though we have a skewed normal distribution, which is typical of reaction time data. There is a point below which we don't have many reaction time measures because of physiological constraints. We also have a number of observations of people who have slower reaction times, which produces the gradual gradient of the tail. 
+
 Our next step is to build a model and specify that that our data are of Gamma distribution. We can build this using the `glmer()` function, ensuring that we specify that `family = Gamma`. Gamma mixed models are often much harder to fit, so the random effect structure needs to be much more simplified. Like earlier, we can build the maximal feasible model using the `buildmer()` function.
 
 ```{r}
-gamma_model <- buildmer(RT ~ StoryEmotion * FaceExpression +
+gamma_buildmer_model <- buildmer(RT ~ StoryEmotion * FaceExpression +
                            (1 + StoryEmotion * FaceExpression | Subject) +
                            (1 + StoryEmotion * FaceExpression | Vignette),
                          family = Gamma,
                          data = q2_data_tidied,
                         buildmerControl = buildmerControl(direction = 'order',
                                                           quiet = TRUE))
-formula(gamma_model)
+formula(gamma_buildmer_model)
 ```
 
 This is problematic - the model `buildmer()` has chosen as the maximal feasible formula is too simplistic:
@@ -564,6 +604,11 @@ gamma_model_nAGQ0 <- buildmer(RT ~ StoryEmotion * FaceExpression +
                                                           quiet = TRUE))
 formula(gamma_model_nAGQ0)
 ```
+
+```{r}
+formula(gamma_model_nAGQ0)
+```
+
 
 This MFM is much more inclusive of our parameters. Let's compare our factorial model with normality assumptions against our new gamma model:
 
